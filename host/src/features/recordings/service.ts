@@ -280,15 +280,33 @@ export const createRecordingService = (
         let failure: unknown;
         let ended = false;
         let lastEnd: number | undefined;
-        const enqueue = (action: () => Promise<void>, size: number): void => {
+        // Upload ahead with bounded concurrency; commit verified fragments in arrival order.
+        // A serial cloud round trip per one-second fragment cannot keep up with live input.
+        let uploading = 0;
+        const uploads: (() => void)[] = [];
+        const transfer = (upload: () => Promise<void>): Promise<void> => new Promise((resolve, reject) => {
+          const start = () => {
+            uploading++;
+            void Promise.resolve().then(() => failure ? undefined : upload()).then(resolve, reject).finally(() => {
+              uploading--;
+              uploads.shift()?.();
+            });
+          };
+          if (uploading < 4) start(); else uploads.push(start);
+        });
+        const enqueue = (action: () => Promise<void>, size: number, upload: () => Promise<void>): void => {
           if (failure || ended) return;
           if (size > 8 * 1024 * 1024 || buffered + size > 32 * 1024 * 1024) {
             failure = new Error("Recording upload queue exceeded 32MiB");
             return;
           }
           buffered += size;
+          const uploaded = transfer(upload);
+          // Later transfers may fail before the ordered commit reaches them.
+          void uploaded.catch(() => undefined);
           queue = queue
             .then(async () => {
+              await uploaded;
               if (!failure) await action();
             })
             .catch((e) => {
@@ -306,10 +324,9 @@ export const createRecordingService = (
                   throw new Error("Repeated init would replace the recorded epoch");
                 clock = readVideoClock(bytes);
                 s.init = digest(bytes);
-                await putVerified(store(), `content/${s.init}`, bytes, "video/mp4");
                 s.bytes += bytes.length;
                 await save(s);
-              }, bytes.length);
+              }, bytes.length, () => putVerified(store(), `content/${digest(bytes)}`, bytes, "video/mp4"));
             else if (tag === 2)
               enqueue(async () => {
                 if (!clock) throw new Error("Fragment before initialization");
@@ -325,13 +342,12 @@ export const createRecordingService = (
                   throw new Error("Recording timeline is discontinuous");
                 lastEnd = time.start + time.duration;
                 const id = digest(bytes);
-                await putVerified(store(), `content/${id}`, bytes, "video/iso.segment");
                 s.parts.push({ id, ...time });
                 s.segments = s.parts.length;
                 s.bytes += bytes.length;
                 s.durationSeconds += time.duration;
                 await save(s);
-              }, bytes.length);
+              }, bytes.length, () => putVerified(store(), `content/${digest(bytes)}`, bytes, "video/iso.segment"));
           },
           async close(clean) {
             if (ended) return;

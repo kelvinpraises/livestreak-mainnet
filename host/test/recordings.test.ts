@@ -43,6 +43,36 @@ const video = (seconds = 2) => {
 };
 afterEach(async () => { vi.unstubAllGlobals(); vi.restoreAllMocks(); await Promise.all(databases.splice(0).map(handle => handle.close())); });
 describe("cloud recordings", () => {
+  it("uploads concurrently while preserving fragment order when cloud responses arrive out of order", async () => {
+    const store = testObjectStore();
+    const put = store.put.bind(store);
+    let active = 0, maximum = 0, count = 0;
+    store.put = async (...args) => {
+      active++; maximum = Math.max(maximum, active);
+      const sequence = count++;
+      try {
+        await new Promise(resolve => setTimeout(resolve, sequence === 1 ? 80 : 5));
+        await put(...args);
+      } finally { active--; }
+    };
+    vi.stubGlobal("fetch", vi.fn(async (url: string) =>
+      new Response(new Uint8Array(await store.get(new URL(url).pathname.slice(1))).buffer)));
+    const service = createRecordingService(store, "secret", metadata());
+    const recording = await service.begin(scope);
+    const writer = await service.open(recording.id, recording.ingestToken);
+    const chunks = video(8);
+    for (const chunk of chunks) writer.push(chunk.kind === "init" ? 1 : 2, chunk.data);
+    await writer.close(true);
+    const receipt = await service.read(scope);
+    expect(receipt?.status).toBe("ready");
+    expect(receipt?.durationSeconds).toBeCloseTo(8);
+    expect(maximum).toBeGreaterThan(1);
+    expect(maximum).toBeLessThanOrEqual(4);
+    const playlist = new TextDecoder().decode(await store.get(`content/${receipt!.pointer!.id}`));
+    const { digest } = await import("../src/storage/object-store.js");
+    const actual = playlist.split("\n").filter(line => line.startsWith("https://"));
+    expect(actual).toEqual(chunks.filter(chunk => chunk.kind === "fragment").map(chunk => store.publicUrl(`content/${digest(chunk.data)}`)));
+  });
   it("bounds parallel delivery checks and verifies every segment before readiness", async () => {
     const store = testObjectStore();
     const db = metadata();
