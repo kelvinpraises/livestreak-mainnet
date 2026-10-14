@@ -30,11 +30,11 @@ library BondingBoard {
     /// @return newPool pool after `sideRate·dt` flows in
     /// @return dG WAD increase of the shares-per-unit-rate index `g`
     function segMath(uint256 pool, uint256 sideRate, uint256 dt) internal pure returns (uint256 newPool, uint256 dG) {
-        uint256 p0 = price(pool);
         newPool = pool + sideRate * dt;
-        uint256 p1 = price(newPool);
-        if (p1 == p0) return (newPool, 0);
-        uint256 ratioWad = (p1 * WAD) / p0;
+        if (newPool == pool) return (newPool, 0);
+        // Integrate the continuous curve before rounding. The display price
+        // rounds sub-$0.10 changes away and must not erase a funder's shares.
+        uint256 ratioWad = FixedPointMathLib.fullMulDiv(CURVE_K + newPool, WAD, CURVE_K + pool);
         int256 lnv = FixedPointMathLib.lnWad(int256(ratioWad)); // >= 0 since p1 >= p0
         // ΔG = SHARE_SCALE·CURVE_K·ln(p1/p0) / (BASE_PRICE·sideRate), WAD-scaled
         dG = (SHARE_SCALE * CURVE_K * uint256(lnv)) / (BASE_PRICE * sideRate);

@@ -90,6 +90,19 @@ contract VaultResolutionTest is Test {
         assertEq(usdc.balanceOf(alice), 100 * RATE);
     }
 
+    function test_subTenCentWinnerReceivesThePot() public {
+        _fund(alice, aliceNft, Side.Yes, 1000, 81_000);
+        _fund(bob, bobNft, Side.No, 1000, 81_000);
+        vm.warp(200);
+        _resolve(Vault.Outcome.No);
+        vault.collect(v1);
+        assertGt(vault.pendingShares(v1, Side.No, bobNft), 0, "fractional winner has shares");
+        vm.prank(bob);
+        assertEq(marketDriver.withdraw(bobNft, v1, address(0)), 162_000, "sole winner receives both funded sides");
+        assertEq(usdc.balanceOf(bob), 162_000);
+        assertTrue(vault.claimed(v1, Side.No, bobNft));
+    }
+
     /// Hedge mid-market via setLanes: alice flips YES->NO; her new side wins and pays, abandoned is a loss.
     function test_setLanes_hedgeNewSideWinsAbandonedLoses() public {
         _fund(alice, aliceNft, Side.Yes, RATE, 50 * RATE);

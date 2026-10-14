@@ -6,6 +6,26 @@ import {BondingBoard} from "../../solidity/vault/BondingBoard.sol";
 
 /// @notice Pure curve + Board-step properties (replaces the old eager-creditPosition curve tests).
 contract BondingBoardTest is Test {
+    function test_subTenCentStreamEarnsFractionalShares() public {
+        (uint256 pool, uint256 dG) = BondingBoard.segMath(0, 1000, 81);
+        assertEq(pool, 81_000);
+        uint256 shares = (1000 * dG) / 1e18;
+        assertApproxEqAbs(shares, 810_000, 4, "$0.081 earns about 0.81 shares");
+        assertGt(shares, 0, "a funded winner must not disappear");
+    }
+
+    function test_microStreamAccrualDoesNotDependOnPokeFrequency() public {
+        (, uint256 whole) = BondingBoard.segMath(0, 1000, 81);
+        uint256 pool;
+        uint256 pieces;
+        for (uint256 i; i < 81; ++i) {
+            uint256 step;
+            (pool, step) = BondingBoard.segMath(pool, 1000, 1);
+            pieces += step;
+        }
+        assertApproxEqAbs(pieces, whole, 1e10, "same stream credited despite frequent reads");
+    }
+
     function test_priceIsBaseAtEmptyPool() public {
         assertEq(BondingBoard.price(0), 100_000);
     }
