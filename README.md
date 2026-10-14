@@ -11,6 +11,9 @@ to Arc from this repository yet.** The copied runtime still targets Monad testne
 until its network, collateral and wallet configuration are migrated. Do not use
 the inherited contract addresses as Arc addresses.
 
+Planned application URL: **https://livestreak-mainnet.vercel.app**.
+This URL is the target for this edition; the Arc application is not deployed yet.
+
 ## How it works
 
 1. A **Broadcaster** captures and publishes a stream.

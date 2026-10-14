@@ -11,8 +11,9 @@ testnet edition is maintained separately in `kelvinpraises/livestreak`.
   deployment snapshots must not be used as Arc deployments.
 - No AWS server is currently available. Run the Host on the operator's laptop
   during development; public access still requires HTTPS/WSS connectivity.
-- The existing `livestreak.vercel.app` deployment belongs to the earlier edition;
-  it is not evidence that this Arc edition is live.
+- The application target is **https://livestreak-mainnet.vercel.app**, using a
+  separate Vercel project named `livestreak-mainnet`. It has not been deployed yet.
+  Do not link or redeploy this checkout into the earlier edition's Vercel project.
 
 ## Migration before release
 
@@ -74,3 +75,11 @@ CI still runs on pull requests and pushes to `main`.
 - [USDC interfaces and decimals](https://docs.arc.io/arc/references/contract-addresses)
 - [Porting contracts to Arc](https://docs.arc.io/arc/tutorials/porting-contracts-to-arc)
 - [Transfer event emitters](https://docs.arc.io/arc/references/usdc-system-events)
+
+## Deployment wallet
+
+Dedicated Arc mainnet deployer: `0x961DF4C09a3305a6782B3Bdc20Eff169ef4Fd71d`.
+Fund this address with native USDC on **Arc mainnet (5042)** only. Its private
+key is stored in this checkout's ignored, owner-readable `.env`; it is not
+committed or shared with the Monad edition. Deployment gas is separate from
+market collateral and ongoing sponsorship.
