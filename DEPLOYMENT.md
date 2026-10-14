@@ -1,99 +1,76 @@
-# Public demo deployment
+# Arc mainnet deployment
 
-The frontend is published at **https://livestreak.vercel.app**. Vercel serves the
-static application; the Node Host stays on the operator's laptop and is reached
-through an HTTPS/WSS Cloudflare Tunnel. Arbitrum Sepolia is the deployed EVM
-network. This does not move the Host into a Vercel function.
+`main` in this repository is dedicated to **Arc mainnet (5042)**. The Monad
+testnet edition is maintained separately in `kelvinpraises/livestreak`.
 
-## Host and tunnel
+## Current status
 
-Use Node 22 and retain the existing private `.env` containing the database,
-storage and wallet-provider configuration. Start the Host from the repository:
+- Separate local checkout and GitHub remote are configured.
+- No LiveStreak contracts have been deployed to Arc by this repository.
+- The copied application, SDK and Host still contain Monad defaults. The existing
+  deployment snapshots must not be used as Arc deployments.
+- No AWS server is currently available. Run the Host on the operator's laptop
+  during development; public access still requires HTTPS/WSS connectivity.
+- The existing `livestreak.vercel.app` deployment belongs to the earlier edition;
+  it is not evidence that this Arc edition is live.
+
+## Migration before release
+
+1. Introduce an explicit Arc network and deployment configuration shared by the
+   application, CLI, SDKs and Host. Verify RPC chain ID 5042 before writes.
+2. Configure USDC collateral as `0x3600000000000000000000000000000000000000`.
+   Replace the deployment's MockUSDC assumption with configured collateral;
+   never deploy a mock collateral token on mainnet.
+3. Remove the mainnet test-mint action. Use 6-decimal ERC-20 values for market
+   funding and payouts, and 18-decimal native values for gas. Both views share
+   one USDC balance. Verify gas reserve behavior without sponsorship.
+4. Configure and verify Arc wallet infrastructure and sponsored operations.
+   Network support alone is not proof that our exact wallet configuration works.
+5. Use a dedicated Turso database and media bucket. Set the catalog deployment
+   scope to the real Arc contracts; do not import Monad test records.
+6. Verify the lifecycle with small amounts on Arc testnet first, then deploy and
+   run a small complete mainnet market: publish stream and rules, fund both sides,
+   reject late funding, resolve, verify winner USDC balance changes and losing
+   LVST claims, end the stream and discover/play its verified replay.
+
+Record confirmed contract addresses in the contracts package's deployment
+snapshot and README. Keep production addresses absent until transactions are
+confirmed and the wiring is verified. Standard Anvil does not reproduce Arc's
+native USDC rules; use Arc's runtime or the real network for those checks.
+
+## Host configuration
+
+Start from [host/.env.example](host/.env.example), using new mainnet credentials.
+The example contains placeholders; it is not a working deployment snapshot.
+Provide dedicated database/storage credentials, Arc RPC and wallet-provider
+endpoints, and a verified Arc deployment snapshot before enabling indexing and
+transactions. Do not reuse a Monad snapshot or `.env`.
+
+For local development, use Node 22 and run the Host and app separately after the
+Arc runtime configuration is implemented:
 
 ```sh
 npm run dev --workspace=@livestreak/host-server
+npm run dev --workspace=app
 ```
 
-In a separate shell, start a tunnel:
+The Host defaults to port 8787 and the frontend to port 3000. Set
+`VITE_HOST_BASE_URL` to the intended Host. For public access, configure a stable
+HTTPS/WSS endpoint, the exact app origin, persistent private gateway-grant keys
+and storage playback CORS. A laptop Host requires the laptop to remain online.
 
-```sh
-cloudflared tunnel --protocol http2 --url http://127.0.0.1:8787 --no-autoupdate
-```
+## Release workflows
 
-This setup uses HTTP/2 after the previous QUIC tunnel repeatedly lost its edge
-connection. The tunnel still needs a working network connection.
+The inherited app and Host workflows are manual-only and require the repository
+variable `ARC_MAINNET_READY=true`. Leave it unset until migration and verification
+are complete. They use separate `livestreak-mainnet-app` and
+`livestreak-mainnet-host` images/containers. Configure this repository's own
+deployment secrets and mainnet Host environment file before enabling them.
+CI still runs on pull requests and pushes to `main`.
 
-Set these private environment values to the URL printed by cloudflared, then
-restart the Host:
+## References
 
-```dotenv
-LIVESTREAK_HOST_BASE_URL=https://<tunnel>.trycloudflare.com
-LIVESTREAK_APP_ORIGIN=https://livestreak.vercel.app
-LIVESTREAK_HOST_BIND_HOST=127.0.0.1
-LIVESTREAK_REMOTE_GRANT_KEY=<persistent 32-byte Ed25519 seed in hex>
-```
-
-Keep the grant key private and stable across restarts. Configure CLI settings
-`host.url` to the same public Host URL so remote console links and live viewer
-addresses use the deployed application and public relay.
-
-The public R2 bucket needs GET/HEAD CORS for `https://livestreak.vercel.app`,
-including the `Range` request header. Keep existing allowed origins when adding
-this origin. Live media uses WSS; completed HLS recordings play directly from
-the configured public storage URL. Host WebSocket protocol pings keep idle
-connections active through the proxy.
-
-## Frontend
-
-The existing Vercel project is `flowstream` in `kelvinpraises-projects`, with
-`livestreak.vercel.app` registered as a production project domain. Its root is
-the workspace root, its Node version is 22.x, and `vercel.json` defines the
-build and SPA fallback. Direct `/stream`, `/streams`, `/agents` and `/remote`
-links must return the application's shell.
-
-Set `VITE_HOST_BASE_URL` to the public Host URL in the project's Vercel
-environment. For a local prebuilt deployment, also put it in ignored
-`app/.env.local`; Vite embeds it at build time.
-
-```sh
-npm run build:packages:image
-npm run build --workspace=app
-rm -rf .vercel/output
-mkdir -p .vercel/output/static
-cp -R app/.output/public/. .vercel/output/static/
-```
-
-For `--prebuilt`, write `.vercel/output/config.json` with:
-
-```json
-{
-  "version": 3,
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/_shell.html" }
-  ]
-}
-```
-
-Then deploy using the installed CLI and the linked project:
-
-```sh
-vercel deploy --prebuilt --prod --yes --scope kelvinpraises-projects
-```
-
-Only the generated frontend is included in this prebuilt deployment. `.env`,
-operator keystores, context artifacts and Host credentials stay on the laptop.
-
-## Verification and availability
-
-Check the public Host `/health`, then use the deployed site in the internal
-browser to check indexed Streams, live video, an existing replay, wallet
-connection and a sponsored test-token transaction. `/health` alone does not
-prove the database, chain index or media playback works. A cold catalog refresh
-can take longer than a warm response; stale records retain their freshness
-labels until the chain has been read successfully.
-
-Keep the laptop awake, online, and both processes running. A Quick Tunnel gets
-a new URL when restarted: update both Host and frontend configuration, rebuild
-and redeploy. A named tunnel with a stable domain removes that URL rotation;
-moving the Host to an always-on server removes the laptop dependency.
+- [Arc connection details](https://docs.arc.io/arc/references/connect-to-arc)
+- [USDC interfaces and decimals](https://docs.arc.io/arc/references/contract-addresses)
+- [Porting contracts to Arc](https://docs.arc.io/arc/tutorials/porting-contracts-to-arc)
+- [Transfer event emitters](https://docs.arc.io/arc/references/usdc-system-events)

@@ -1,55 +1,15 @@
-name: Deploy host
+name: Deploy Arc mainnet host
 
-# Push-to-deploy for the LiveStreak host server (the provider node: HTTP/WSS API,
-# including the live fMP4 video fan-out over WS — no media relay). Mirrors deploy-app.yml:
-# build the image in CI, push to ghcr.io, then SSH into the SAME VPS and pull+run it.
-# You only touch the PEM once (DEPLOY_KEY secret).
-#
-# Required repo secrets (Settings → Secrets and variables → Actions) — shared with
-# deploy-app.yml:
-#   DEPLOY_HOST        108.130.99.99
-#   DEPLOY_USER        ubuntu
-#   DEPLOY_KEY         <contents of uburu-key-pair.pem>
-#
-# Host RUNTIME config is NOT baked into the image and is NOT a CI secret. It lives in
-# a VPS-side env file (never committed) that `docker run --env-file` reads:
-#   /home/ubuntu/livestreak-host.env
-# Variables the host reads at runtime (host/src/config/*, host/src/features/*):
-#   Server / bind
-#     LIVESTREAK_HOST_ID, LIVESTREAK_HOST_BASE_URL,
-#     LIVESTREAK_HOST_BIND_HOST (default 0.0.0.0 in-image), LIVESTREAK_HOST_BIND_PORT (8787)
-#   Account-abstraction (hosted EVM bundler and paymaster)
-#     LIVESTREAK_AA_CHAINS_FILE (path to a per-chain JSON, mounted separately) — OR the
-#     single-chain env form:
-#     LIVESTREAK_AA_CHAIN_ID, LIVESTREAK_AA_RPC_URL, LIVESTREAK_AA_BUNDLER_URL, LIVESTREAK_AA_PAYMASTER_URL,
-#     LIVESTREAK_AA_ENTRY_POINT, LIVESTREAK_AA_SAFE_MODULE, LIVESTREAK_AA_PAYMASTER_AUTH_TOKEN
-#   Sui (memory/content sponsor + reads)
-#     LIVESTREAK_SUI_NETWORK, LIVESTREAK_SUI_RPC_URL, LIVESTREAK_SUI_DEPLOYMENT,
-#     LIVESTREAK_SUI_SPONSOR_MNEMONIC
-#   Catalog index scope
-#     LIVESTREAK_CATALOG_CHAINS (comma-separated evm,sui,solana; default evm),
-#     LIVESTREAK_CATALOG_DEFAULT_CHAIN, LIVESTREAK_CATALOG_MARKETS
-#   S3-compatible cloud storage (video/content)
-#     LIVESTREAK_STORAGE_PROVIDER, LIVESTREAK_STORAGE_ENDPOINT, LIVESTREAK_STORAGE_REGION,
-#     LIVESTREAK_STORAGE_BUCKET, LIVESTREAK_STORAGE_ACCESS_KEY_ID, LIVESTREAK_STORAGE_SECRET_ACCESS_KEY,
-#     LIVESTREAK_STORAGE_PUBLIC_BASE_URL, LIVESTREAK_HOST_API_TOKEN, LIVESTREAK_WALLET_SEED
-#     (catalog, documents, steward memory and forum use Turso: TURSO_DATABASE_URL, TURSO_AUTH_TOKEN)
-#   Remote Bridge Console (P4)
-#     LIVESTREAK_APP_ORIGIN, LIVESTREAK_REMOTE_GATEWAY_TOKEN,
-#     LIVESTREAK_REMOTE_GRANT_KEY, LIVESTREAK_REMOTE_SESSION_TTL_MS
-#
-# One-time after the first run: make the ghcr package PUBLIC
-#   (github.com/users/<you>/packages/container/livestreak-host/settings → Change visibility)
-#   so the VPS can `docker pull` anonymously.
+# Manual release only after Arc configuration and lifecycle verification.
+# Required repository variable: ARC_MAINNET_READY=true.
+# Required SSH secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_KEY (this edition only).
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/livestreak-host
+  IMAGE_NAME: ${{ github.repository_owner }}/livestreak-mainnet-host
 
 jobs:
   # dorny/paths-filter so host/** auto-covers new files while !**/*.md skips doc-only
@@ -82,8 +42,8 @@ jobs:
 
   build-and-deploy:
     needs: changes
-    # Always build on a manual run; on push, only when host-relevant files changed.
-    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.host == 'true' }}
+    # Publish only from main after the Arc readiness gate has been enabled.
+    if: ${{ github.ref == 'refs/heads/main' && vars.ARC_MAINNET_READY == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -121,29 +81,23 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             set -e
-            IMAGE=ghcr.io/${{ github.repository_owner }}/livestreak-host:latest
-            # Free disk BEFORE pulling: old image layers filled the box (deploys died with
-            # "no space left on device"). -a removes all unused images, builder cache too;
-            # volumes and running/stopped containers are untouched.
-            docker image prune -af || true
-            docker builder prune -af || true
+            IMAGE=ghcr.io/${{ github.repository_owner }}/livestreak-mainnet-host:latest
             docker pull "$IMAGE"
-            docker stop livestreak-host 2>/dev/null || true
-            docker rm livestreak-host 2>/dev/null || true
+            docker stop livestreak-mainnet-host 2>/dev/null || true
+            docker rm livestreak-mainnet-host 2>/dev/null || true
             # Plain port mapping (no --network host): the live video path is now an
             # encode-once fMP4 byte fan-out over WS on the single HTTP port (8787) — there
             # is no UDP media relay to allocate, so host networking is no longer needed and
             # a bridge with an explicit port map is the safer default. Runtime config comes
             # from the VPS-side env file, never from the image.
             docker run -d \
-              --name livestreak-host \
+              --name livestreak-mainnet-host \
               --restart unless-stopped \
               -p 8787:8787 \
-              --env-file /home/ubuntu/livestreak-host.env \
+              --env-file /home/ubuntu/livestreak-mainnet-host.env \
               "$IMAGE"
-            docker image prune -f
             echo "--- waiting for health ---"
             sleep 5
             code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8787/health || echo 000)
             echo "GET /health -> $code"
-            docker logs --tail 20 livestreak-host || true
+            docker logs --tail 20 livestreak-mainnet-host || true

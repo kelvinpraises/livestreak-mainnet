@@ -1,29 +1,16 @@
-name: Deploy app
+name: Deploy Arc mainnet app
 
-# Push-to-deploy: build the frontend image in CI, push to ghcr.io, then SSH into
-# the VPS and pull+run it. You only touch the PEM once (DEPLOY_KEY secret).
-#
-# Required repo secrets (Settings → Secrets and variables → Actions):
-#   DEPLOY_HOST        108.130.99.99
-#   DEPLOY_USER        ubuntu
-#   DEPLOY_KEY         <contents of uburu-key-pair.pem>
-#
-# Frontend config (chain id, RPC/bundler/paymaster URLs, contract addresses) is
-# committed in app/src/config/contracts.ts — no build-time secrets/vars needed.
-#
-# One-time after the first run: make the ghcr package PUBLIC
-#   (github.com/users/<you>/packages/container/livestreak-app/settings → Change visibility)
-#   so the VPS can `docker pull` anonymously.
+# Manual release only after Arc configuration and lifecycle verification.
+# Required repository variable: ARC_MAINNET_READY=true.
+# Required SSH secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_KEY (this edition only).
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch: {}
 
 env:
   REGISTRY: ghcr.io
   # ghcr requires a lowercase path; repository_owner is normally already lowercase.
-  IMAGE_NAME: ${{ github.repository_owner }}/livestreak-app
+  IMAGE_NAME: ${{ github.repository_owner }}/livestreak-mainnet-app
 
 jobs:
   # Decide whether anything that affects the image actually changed. Using
@@ -53,8 +40,8 @@ jobs:
 
   build-and-deploy:
     needs: changes
-    # Always build on a manual run; on push, only when app-relevant files changed.
-    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.app == 'true' }}
+    # Publish only from main after the Arc readiness gate has been enabled.
+    if: ${{ github.ref == 'refs/heads/main' && vars.ARC_MAINNET_READY == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -92,25 +79,19 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             set -e
-            IMAGE=ghcr.io/${{ github.repository_owner }}/livestreak-app:latest
-            # Free disk BEFORE pulling: old image layers filled the box (deploys died with
-            # "no space left on device"). -a removes all unused images, builder cache too;
-            # volumes and running/stopped containers are untouched.
-            docker image prune -af || true
-            docker builder prune -af || true
+            IMAGE=ghcr.io/${{ github.repository_owner }}/livestreak-mainnet-app:latest
             docker pull "$IMAGE"
-            docker network create uburu-network 2>/dev/null || true
-            docker stop livestreak-app 2>/dev/null || true
-            docker rm livestreak-app 2>/dev/null || true
+            docker network create livestreak-mainnet-network 2>/dev/null || true
+            docker stop livestreak-mainnet-app 2>/dev/null || true
+            docker rm livestreak-mainnet-app 2>/dev/null || true
             docker run -d \
-              --name livestreak-app \
+              --name livestreak-mainnet-app \
               --restart unless-stopped \
-              --network uburu-network \
+              --network livestreak-mainnet-network \
               -p 3002:3000 \
               "$IMAGE"
-            docker image prune -f
             echo "--- waiting for health ---"
             sleep 5
             code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3002/ || echo 000)
             echo "GET / -> $code"
-            docker logs --tail 20 livestreak-app || true
+            docker logs --tail 20 livestreak-mainnet-app || true
