@@ -1,0 +1,15 @@
+context/**
+scripts/**
+**/node_modules/**
+.git/**
+.vercel/**
+**/dist/**
+**/.output/**
+**/.tanstack/**
+.env*
+!.env.example
+**/target/**
+**/out/**
+**/cache/**
+**/broadcast/**
+packages/contracts/chains/evm/lib/**
