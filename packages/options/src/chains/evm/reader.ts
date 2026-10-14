@@ -125,7 +125,10 @@ export const createEvmOptionsReader = (config: OptionsChainConfig): OptionsReade
 
   const evmConfig = config.walletInit.config as { provider: string };
   const rpcUrl = config.readRpcUrl ?? String(evmConfig.provider);
-  const publicClient = createPublicClient({ transport: http(rpcUrl) });
+  const publicClient = createPublicClient({
+    transport: http(rpcUrl),
+    batch: { multicall: { deployless: true, wait: 10, batchSize: 16_384 } }
+  });
 
   const reader = createEvmOptionsReaderFromCall(
     config.addresses as OptionsContractAddresses,

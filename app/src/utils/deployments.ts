@@ -30,7 +30,7 @@ export function buildOptionsContractAddresses(): OptionsContractAddresses {
     stewardRegistry: protocol.stewardRegistry as `0x${string}`,
     treasury: protocol.treasury as `0x${string}`,
     lvstToken: protocol.lvstToken as `0x${string}`,
-    dripsStreaming: streaming.dripsStreaming as `0x${string}`,
+    dripsStreaming: streaming.dripsProxy as `0x${string}`,
   }
 }
 

@@ -385,7 +385,7 @@ function buildChainConfig(
     walletInit,
     seed: secret,
     addresses: buildOptionsContractAddresses(),
-    readRpcUrl: EVM_RPC_URL,
+    readRpcUrl: String((walletInit.config as { provider: string }).provider),
     includeProtocolSummary: true,
     hostUrl: HOST_BASE_URL,
   }
@@ -891,7 +891,7 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
     const manager = createWalletManager('evm', cfg.seed, cfg.walletInit.config as WalletConfigByChain['evm']);
     writeBusyRef.current = true;
     setClaiming(true);
-    const client = createPublicClient({ transport: http(EVM_RPC_URL, { timeout: 15000 }) });
+    const client = createPublicClient({ transport: http(cfg.readRpcUrl ?? EVM_RPC_URL, { timeout: 15000 }) });
     const pendingKey = `livestreak.test-usdc-mint:${EVM_NETWORK.chainId}:${user.toLowerCase()}`;
     try {
       if (!navigator.locks) throw new Error('This browser does not support safe wallet actions across tabs.');

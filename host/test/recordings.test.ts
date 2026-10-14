@@ -12,7 +12,7 @@ const scope = {
   marketId: `0x${"a".repeat(64)}`,
   runId: "run#observation",
 };
-const video = () => {
+const video = (seconds = 2) => {
   const bytes = execFileSync("ffmpeg", [
     "-hide_banner",
     "-loglevel",
@@ -22,7 +22,7 @@ const video = () => {
     "-i",
     "testsrc2=size=160x90:rate=10",
     "-t",
-    "2",
+    String(seconds),
     "-an",
     "-c:v",
     "libx264",
@@ -43,6 +43,49 @@ const video = () => {
 };
 afterEach(async () => { vi.unstubAllGlobals(); vi.restoreAllMocks(); await Promise.all(databases.splice(0).map(handle => handle.close())); });
 describe("cloud recordings", () => {
+  it("bounds parallel delivery checks and verifies every segment before readiness", async () => {
+    const store = testObjectStore();
+    const db = metadata();
+    let active = 0, maximum = 0;
+    const checked = new Set<string>();
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      active++;
+      maximum = Math.max(maximum, active);
+      try {
+        await new Promise(resolve => setTimeout(resolve, 10));
+        const key = new URL(url).pathname.slice(1);
+        checked.add(key);
+        return new Response(new Uint8Array(await store.get(key)).buffer);
+      } finally { active--; }
+    }));
+    const service = createRecordingService(store, "secret", db);
+    const recording = await service.begin(scope);
+    const writer = await service.open(recording.id, recording.ingestToken);
+    for (const chunk of video(12)) writer.push(chunk.kind === "init" ? 1 : 2, chunk.data);
+    await writer.close(true);
+    expect((await service.read(scope))?.status).toBe("ready");
+    expect(maximum).toBeGreaterThan(1);
+    expect(maximum).toBeLessThanOrEqual(8);
+    expect(checked).toEqual(new Set(store.data.keys()));
+  });
+  it("rejects corrupt public media even when another concurrent check succeeds", async () => {
+    const store = testObjectStore();
+    const db = metadata();
+    let requests = 0;
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (++requests === 2) return new Response("corrupt");
+      return new Response(new Uint8Array(await store.get(new URL(url).pathname.slice(1))).buffer);
+    }));
+    const service = createRecordingService(store, "secret", db);
+    const recording = await service.begin(scope);
+    const writer = await service.open(recording.id, recording.ingestToken);
+    for (const chunk of video()) writer.push(chunk.kind === "init" ? 1 : 2, chunk.data);
+    await writer.close(true);
+    const receipt = await service.read(scope);
+    expect(receipt?.status).toBe("failed");
+    expect(receipt?.pointer).toBeUndefined();
+    expect(receipt?.error).toContain("verification");
+  });
   it("records real encoded fragments, survives service restart and exposes a verified HLS receipt", async () => {
     const store = testObjectStore();
     const db = metadata();

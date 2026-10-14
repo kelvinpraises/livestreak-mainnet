@@ -79,7 +79,7 @@ const evmAddressesFromSnapshot = (
   const stewardRegistry = protocol?.stewardRegistry;
   const treasury = protocol?.treasury;
   const lvstToken = protocol?.lvstToken;
-  const dripsStreaming = streaming?.dripsStreaming;
+  const dripsStreaming = streaming?.dripsProxy;
   if (
     marketRegistry === undefined ||
     vault === undefined ||

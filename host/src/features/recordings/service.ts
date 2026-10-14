@@ -157,7 +157,10 @@ export const createRecordingService = (
     await save(s);
     try {
       // Reverify every media object on retry; metadata alone never makes a replay ready.
-      for (const id of [s.init, ...s.parts.map((p) => p.id)]) {
+      const media = [s.init, ...s.parts.map((p) => p.id)];
+      let cursor = 0;
+      let verificationError: unknown;
+      const verifyMedia = async (id: string) => {
         if (!/^[a-f0-9]{64}$/.test(id) || digest(await store().get(`content/${id}`)) !== id)
           throw new Error("Recording object integrity mismatch");
         if (
@@ -165,7 +168,17 @@ export const createRecordingService = (
           id
         )
           throw new Error("Public recording media failed verification");
-      }
+      };
+      // Bound cloud reads while verifying every object. Serial verification adds
+      // two network round trips per segment after an otherwise completed stream.
+      await Promise.all(Array.from({ length: Math.min(8, media.length) }, async () => {
+        while (verificationError === undefined && cursor < media.length) {
+          const id = media[cursor++]!;
+          try { await verifyMedia(id); }
+          catch (error) { verificationError = error; }
+        }
+      }));
+      if (verificationError !== undefined) throw verificationError;
       const target = Math.ceil(Math.max(...s.parts.map((p) => p.duration)));
       const playlist = [
         "#EXTM3U",
