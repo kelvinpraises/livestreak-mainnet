@@ -14,7 +14,7 @@ export async function deployWire(
   client: PublicClient,
   walletClient: WalletClient,
   previousScopes: Record<string, ScopeResult>,
-  config: { chain: string; rpc: string; deployer: Address }
+  config: { chain: string; rpc: string; deployer: Address; deploymentLabel?: string }
 ): Promise<ScopeResult> {
   console.log("Wiring protocol + streaming...");
 
@@ -31,6 +31,7 @@ export async function deployWire(
   const { protocol, vault, marketRegistry, mockUsdc, stewardRegistry, lvstToken, treasury } =
     protocolScope.contracts as Record<string, Address>;
   const { deployer } = config;
+  const label = config.deploymentLabel ?? LABEL;
 
   try {
     const protocolAbi = loadAbi("out/Protocol.sol/Protocol.json");
@@ -64,7 +65,7 @@ export async function deployWire(
           "out/VaultDriver.sol/VaultDriver.json",
           [protocol, dripsProxy, caller, mockUsdc],
           undefined,
-          `${LABEL}.vaultDriver`
+          `${label}.vaultDriver`
         );
 
     const vaultDriverId = (await client.readContract({
@@ -100,7 +101,7 @@ export async function deployWire(
           "out/MarketDriver.sol/MarketDriver.json",
           [dripsProxy, caller, driverId, protocol, vault, vaultDriver, mockUsdc],
           undefined,
-          `${LABEL}.marketDriverLogic`
+          `${label}.marketDriverLogic`
         )) as Address);
       console.log(`    marketDriverProxy → ${marketDriverProxy}`);
     } else {
@@ -116,7 +117,7 @@ export async function deployWire(
         "out/MarketDriver.sol/MarketDriver.json",
         [dripsProxy, caller, driverId, protocol, vault, vaultDriver, mockUsdc],
         undefined,
-        `${LABEL}.marketDriverLogic`
+        `${label}.marketDriverLogic`
       );
       marketDriverLogic = marketDriverLogicDeployed;
       marketDriverProxy = await deployFromArtifact(
@@ -125,7 +126,7 @@ export async function deployWire(
         "out/Managed.sol/ManagedProxy.json",
         [marketDriverLogic, deployer, "0x"],
         undefined,
-        `${LABEL}.marketDriverProxy`
+        `${label}.marketDriverProxy`
       );
       await write(dripsProxy, dripsAbi, "updateDriverAddress", [driverId, marketDriverProxy]);
       await write(protocol, protocolAbi, "setMarketDriver", [marketDriverProxy]);

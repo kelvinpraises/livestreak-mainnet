@@ -21,19 +21,19 @@ People or agents operate each role independently through its SDK, CLI or remote 
 
 | Contract | Address | Purpose |
 | --- | --- | --- |
-| Protocol | [`0x709beb8be007eb2b23a55725b8bf6006962fba21`](https://testnet.monadexplorer.com/address/0x709beb8be007eb2b23a55725b8bf6006962fba21) | Protocol configuration |
-| MarketRegistry | [`0x7713139dc01e0358f37e136ba62921e09b073655`](https://testnet.monadexplorer.com/address/0x7713139dc01e0358f37e136ba62921e09b073655) | Stream registry |
-| Vault | [`0x60ccdf63cb3723c9083a1f0908f149ac63ea6498`](https://testnet.monadexplorer.com/address/0x60ccdf63cb3723c9083a1f0908f149ac63ea6498) | Prediction vault |
+| Protocol | [`0xfed670b5c0390a7d360c6d5a5d92a0d0bb14990a`](https://testnet.monadexplorer.com/address/0xfed670b5c0390a7d360c6d5a5d92a0d0bb14990a) | Protocol configuration |
+| MarketRegistry | [`0xfadcd4a5d9fc8ec662e043eeb98ce493e946da5e`](https://testnet.monadexplorer.com/address/0xfadcd4a5d9fc8ec662e043eeb98ce493e946da5e) | Stream registry |
+| Vault | [`0x0b5dc37e3a09d3ffe3a6fb820bd183fedc93a7dd`](https://testnet.monadexplorer.com/address/0x0b5dc37e3a09d3ffe3a6fb820bd183fedc93a7dd) | Prediction vault |
 | Drips proxy | [`0xd653d50dec0338bdca006fe9dcf82574bf3aa8b2`](https://testnet.monadexplorer.com/address/0xd653d50dec0338bdca006fe9dcf82574bf3aa8b2) | Streaming payments |
-| MarketDriver proxy | [`0x00bfc9aa3d06b2182c89c0941f653de0fd1f7071`](https://testnet.monadexplorer.com/address/0x00bfc9aa3d06b2182c89c0941f653de0fd1f7071) | Position management |
-| VaultDriver | [`0xb290099d7356652ff4fed536d07dbf6cee7b9f9e`](https://testnet.monadexplorer.com/address/0xb290099d7356652ff4fed536d07dbf6cee7b9f9e) | Vault creation |
-| StewardRegistry | [`0x934d5173b80eb403c845e34a01bcea21abf77b40`](https://testnet.monadexplorer.com/address/0x934d5173b80eb403c845e34a01bcea21abf77b40) | Outcome resolution |
-| Treasury | [`0x0e76f153cf1d5bba65b86ab2c6faadb1b177d3ad`](https://testnet.monadexplorer.com/address/0x0e76f153cf1d5bba65b86ab2c6faadb1b177d3ad) | Protocol treasury |
-| LVST | [`0xcb40db9b431b18b2b4f25ab2aeda67776d9e10a2`](https://testnet.monadexplorer.com/address/0xcb40db9b431b18b2b4f25ab2aeda67776d9e10a2) | Reward token |
-| Test USDC | [`0x76bb00aa1936dd7cda6df2fa403f1439e3db456a`](https://testnet.monadexplorer.com/address/0x76bb00aa1936dd7cda6df2fa403f1439e3db456a) | Test collateral |
+| MarketDriver proxy | [`0xc14291ddd680d0745423d4a6e8a8a329c48758dd`](https://testnet.monadexplorer.com/address/0xc14291ddd680d0745423d4a6e8a8a329c48758dd) | Position management |
+| VaultDriver | [`0x2d1c4a220c4fb39e770a1b751a9cbdab2eae21fd`](https://testnet.monadexplorer.com/address/0x2d1c4a220c4fb39e770a1b751a9cbdab2eae21fd) | Vault creation |
+| StewardRegistry | [`0xf751e4bf9a2a3669ee4861e17643c8a93c8af0cd`](https://testnet.monadexplorer.com/address/0xf751e4bf9a2a3669ee4861e17643c8a93c8af0cd) | Outcome resolution |
+| Treasury | [`0x8d798eb814d23a3ba6e1b9069185b9860d37791a`](https://testnet.monadexplorer.com/address/0x8d798eb814d23a3ba6e1b9069185b9860d37791a) | Protocol treasury |
+| LVST | [`0xdba02b69f7f76611d211bde2d51b256e672c2cfb`](https://testnet.monadexplorer.com/address/0xdba02b69f7f76611d211bde2d51b256e672c2cfb) | Reward token |
+| Test USDC | [`0xf2238a8478fffbe5e69d4656e5e8f76e74d1367a`](https://testnet.monadexplorer.com/address/0xf2238a8478fffbe5e69d4656e5e8f76e74d1367a) | Test collateral |
 | Caller | [`0x69af9aa0e3ba6530d2f947a6e9c61f5691e8a72b`](https://testnet.monadexplorer.com/address/0x69af9aa0e3ba6530d2f947a6e9c61f5691e8a72b) | Transaction forwarding |
 | DripsStreaming logic | [`0xc20641edde8cecf5a6530a3edbd7fbbffe0bf3d5`](https://testnet.monadexplorer.com/address/0xc20641edde8cecf5a6530a3edbd7fbbffe0bf3d5) | Streaming implementation |
-| MarketDriver logic | [`0x381d7f48f40569069be210ca0209b19db130cf55`](https://testnet.monadexplorer.com/address/0x381d7f48f40569069be210ca0209b19db130cf55) | Position implementation |
+| MarketDriver logic | [`0xe3a197c8a205b60dc5a35a92828254a616ca1eb4`](https://testnet.monadexplorer.com/address/0xe3a197c8a205b60dc5a35a92828254a616ca1eb4) | Position implementation |
 | EntryPoint v0.7 | [`0x0000000071727De22E5E9d8BAf0edAc6f37da032`](https://testnet.monadexplorer.com/address/0x0000000071727De22E5E9d8BAf0edAc6f37da032) | Account abstraction |
 | Safe singleton | [`0x41675C099F32341bf84BFc5382aF534df5C7461a`](https://testnet.monadexplorer.com/address/0x41675C099F32341bf84BFc5382aF534df5C7461a) | Wallet implementation |
 | SafeProxyFactory | [`0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67`](https://testnet.monadexplorer.com/address/0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67) | Wallet deployment |

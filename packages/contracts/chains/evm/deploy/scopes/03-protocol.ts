@@ -7,10 +7,11 @@ export async function deployProtocol(
   client: PublicClient,
   walletClient: WalletClient,
   _previousScopes: Record<string, ScopeResult>,
-  config: { chain: string; rpc: string; deployer: Address }
+  config: { chain: string; rpc: string; deployer: Address; deploymentLabel?: string }
 ): Promise<ScopeResult> {
   console.log("Deploying LiveStreak protocol contracts...");
   const { deployer } = config;
+  const label = config.deploymentLabel ?? LABEL;
 
   try {
     const protocol = await deployFromArtifact(
@@ -19,7 +20,7 @@ export async function deployProtocol(
       "out/Protocol.sol/Protocol.json",
       [deployer],
       undefined,
-      `${LABEL}.protocol`
+      `${label}.protocol`
     );
 
     const marketRegistry = await deployFromArtifact(
@@ -28,7 +29,7 @@ export async function deployProtocol(
       "out/MarketRegistry.sol/MarketRegistry.json",
       [deployer, protocol],
       undefined,
-      `${LABEL}.marketRegistry`
+      `${label}.marketRegistry`
     );
 
     const vault = await deployFromArtifact(
@@ -37,7 +38,7 @@ export async function deployProtocol(
       "out/Vault.sol/Vault.json",
       [protocol],
       undefined,
-      `${LABEL}.vault`
+      `${label}.vault`
     );
 
     const mockUsdc = await deployFromArtifact(
@@ -46,7 +47,7 @@ export async function deployProtocol(
       "out/MockUSDC.sol/MockUSDC.json",
       undefined,
       undefined,
-      `${LABEL}.mockUsdc`
+      `${label}.mockUsdc`
     );
 
     const lvstToken = await deployFromArtifact(
@@ -55,7 +56,7 @@ export async function deployProtocol(
       "out/LvstToken.sol/LvstToken.json",
       [protocol],
       undefined,
-      `${LABEL}.lvstToken`
+      `${label}.lvstToken`
     );
 
     const treasury = await deployFromArtifact(
@@ -64,7 +65,7 @@ export async function deployProtocol(
       "out/Treasury.sol/Treasury.json",
       [deployer, mockUsdc, protocol],
       undefined,
-      `${LABEL}.treasury`
+      `${label}.treasury`
     );
 
     const stewardRegistry = await deployFromArtifact(
@@ -73,7 +74,7 @@ export async function deployProtocol(
       "out/StewardRegistry.sol/StewardRegistry.json",
       [deployer, protocol],
       undefined,
-      `${LABEL}.stewardRegistry`
+      `${label}.stewardRegistry`
     );
 
     return {
