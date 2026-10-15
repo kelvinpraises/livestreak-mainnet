@@ -19,18 +19,17 @@ function data(): typeof state.data {
     protocolStats: { totalVaults: 1, totalVolume: 3, activeStreams: 0, resolvedVaults: 1, yesWinRatePct: 100 },
     lifetimeVaults: [
       { vaultId: 'e', streamId: 'show', option: 'Verified EVM result', streamTitle: 'EVM show', outcome: 'yes', totalPool: 3, resolvedAtMs: 1, chain: 'evm', stale: false },
-      { vaultId: 's', streamId: 'show', option: 'Unverified Sui result', streamTitle: 'Sui show', outcome: 'no', totalPool: 99, resolvedAtMs: 1, chain: 'sui', stale: true },
+      { vaultId: 's', streamId: 'show', option: 'Unverified Arc result', streamTitle: 'Stale show', outcome: 'no', totalPool: 99, resolvedAtMs: 1, chain: 'evm', stale: true },
     ],
-    indexing: { status: 'partial', generatedAtMs: 1, staleMarkets: 1, failedMarkets: 1, availableChains: ['evm', 'sui'], failedChains: [], verifiedChains: ['evm'], statsScope: 'verified-subset', chains: [{ chain: 'evm', status: 'fresh', verifiedMarkets: 1, staleMarkets: 0 }, { chain: 'sui', status: 'unavailable', verifiedMarkets: 0, staleMarkets: 1 }] },
+    indexing: { status: 'partial', generatedAtMs: 1, staleMarkets: 1, failedMarkets: 1, availableChains: ['evm'], failedChains: [], verifiedChains: ['evm'], statsScope: 'verified-subset', chains: [{ chain: 'evm', status: 'fresh', verifiedMarkets: 1, staleMarkets: 1 }] },
   }
 }
-it('shows only verified resolutions and scoped totals during a second-chain outage', () => {
+it('shows only verified resolutions and scoped totals during an incomplete registry refresh', () => {
   state.data = data()
   const { container } = render(<HomePage />)
   expect(screen.getAllByRole('status').map(n => n.textContent).join(' ')).toContain('only verified records from evm')
-  expect(screen.getAllByRole('status').map(n => n.textContent).join(' ')).toContain('Coverage incomplete: sui')
   expect(screen.getByText('Verified EVM result')).toBeTruthy()
-  expect(screen.queryByText('Unverified Sui result')).toBeNull()
+  expect(screen.queryByText('Unverified Arc result')).toBeNull()
   expect(screen.getAllByText('$3.00').length).toBeGreaterThan(0)
   expect(container.textContent).not.toContain('$99.00')
   expect(container.textContent).toContain('No live streams in the verified records')

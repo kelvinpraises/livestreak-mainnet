@@ -11,7 +11,7 @@ it('marks retained data stale after a failed refresh and recovers without borrow
   ports.resolve.mockResolvedValueOnce({ marketId: 'm', isLive: true, streamStatus: 'live' })
     .mockRejectedValueOnce(new Error('Host offline'))
     .mockResolvedValue({ marketId: 'm', isLive: false, streamStatus: 'ended' })
-  const { result } = renderHook(() => useHostStream('m', 'sui'))
+  const { result } = renderHook(() => useHostStream('m', 'evm'))
   await act(async () => { await Promise.resolve() })
   expect(result.current.stream?.isLive).toBe(true)
   await act(async () => { await vi.advanceTimersByTimeAsync(3000) })

@@ -4,7 +4,7 @@ import { useStreamMeta } from '#/hooks/use-stream-meta'
 import { useHostStream } from '#/hooks/use-host-stream'
 
 export const Route = createFileRoute('/stream/$id')({
-  validateSearch: (search: Record<string, unknown>): { vault?: string; chain?: 'evm' | 'sui' | 'solana' } => ({ chain: search.chain === 'evm' || search.chain === 'sui' || search.chain === 'solana' ? search.chain : undefined, vault: typeof search.vault === 'string' ? search.vault : undefined }),
+  validateSearch: (search: Record<string, unknown>): { vault?: string; chain?: 'evm' } => ({ chain: search.chain === 'evm' ? search.chain : undefined, vault: typeof search.vault === 'string' ? search.vault : undefined }),
   component: StreamPage,
 })
 

@@ -47,13 +47,14 @@ it.each(['missing', 'closed'])('blocks %s rules before submission', reason => {
   render(<Form />); choose(); expect(submit().disabled).toBe(true)
   fireEvent.click(submit()); expect(mocks.options.fundStream).not.toHaveBeenCalled()
 })
-it('offers a clearly labelled testnet mint before the first position exists', async () => {
+it('requires real Arc USDC and never offers a test mint', () => {
   mocks.wallet.usdcBalance = 0
   render(<Form />); choose(); expect(submit().disabled).toBe(true)
-  fireEvent.click(screen.getByText('Mint 100 test USDC'))
-  await waitFor(() => expect(mocks.wallet.topUp).toHaveBeenCalledWith(100))
-  expect(screen.getByText('Monad Testnet · test funds only')).toBeTruthy()
+  expect(screen.getByText(/Send USDC on Arc/)).toBeTruthy()
+  expect(screen.queryByText('Mint 100 test USDC')).toBeNull()
+  expect(mocks.wallet.topUp).not.toHaveBeenCalled()
 })
+
 it('opens the canonical wallet dialog instead of pretending a disconnected bet worked', () => {
   mocks.options.isConnected = false
   const open = vi.fn(); window.addEventListener('livestreak:connect-wallet', open)

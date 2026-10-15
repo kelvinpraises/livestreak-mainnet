@@ -19,7 +19,7 @@ export interface ClaimPorts {
   execute(step: ClaimStep): Promise<string>
   receipt(hash: string): Promise<boolean | undefined>
 }
-const key = (chain: string, owner: string) => `livestreak.claim.v1:${chain}:${owner}`
+const key = (chain: string, owner: string) => `livestreak-mainnet.claim.v1:${chain}:${owner}`
 export const loadClaim = (
   storage: Storage,
   chain: string,

@@ -155,7 +155,7 @@ it('isolates recovery by connected chain and wallet', async () => {
       receipt: async () => undefined,
     }),
   ).rejects.toThrow()
-  expect(loadClaim(s, 'sui', 'viewer')).toBeNull()
+  expect(loadClaim(s, 'unsupported', 'viewer')).toBeNull()
   expect(loadClaim(s, 'evm', 'other')).toBeNull()
   expect(loadClaim(s, 'evm', 'viewer')?.status).toBe('unknown')
 })

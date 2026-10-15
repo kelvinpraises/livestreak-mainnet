@@ -1,74 +1,45 @@
-import { isAddress } from 'viem'
-import { monadTestnet } from 'viem/chains'
+import { isAddress } from "viem";
+import { ARC_MAINNET } from "@livestreak/contracts/evm";
 
-// The VM families the options runtime can drive. Solana's contracts port landed, so it is now a
-// first-class runtime chain alongside EVM + Sui (no longer a display-only pill).
-export type OptionsChainKind = 'evm' | 'sui' | 'solana'
-
+export type OptionsChainKind = "evm";
 export const EVM_NETWORK = {
-  chainId: monadTestnet.id,
-  name: monadTestnet.name,
-  rpcUrl: monadTestnet.rpcUrls.default.http[0],
+  chainId: ARC_MAINNET.chainId,
+  name: ARC_MAINNET.name,
+  rpcUrl: ARC_MAINNET.rpcUrl,
   token: {
-    symbol: 'USDC',
-    decimals: 6,
+    symbol: ARC_MAINNET.collateral.symbol,
+    decimals: ARC_MAINNET.collateral.decimals,
   },
-} as const
-
-export const SESSION_CHAIN_KEY = 'livestreak_options_chain'
-
+} as const;
+export const SESSION_CHAIN_KEY = "livestreak_mainnet_options_chain";
 export interface ChainOption {
-  readonly id: OptionsChainKind
-  readonly label: string
-  readonly network: string
+  readonly id: OptionsChainKind;
+  readonly label: string;
+  readonly network: string;
 }
-
-// Canonical chains shown in the wallet's chain picker. `id` is the VM family used for wallet derivation
-// + contract deployments (unchanged across the app); `label` is the SPECIFIC chain name — the EVM
-// EVM targets Monad testnet; actual action availability is checked against its deployment.
 export const SUPPORTED_CHAINS: readonly ChainOption[] = [
-  { id: 'evm', label: 'Monad', network: 'Testnet · 10143' },
-  { id: 'solana', label: 'Solana', network: 'localnet · 8899' },
-]
-
-// Empty-state helper: given the active chain, return the FIRST other supported chain that has open
-// vaults (per the `hasVaults` probe), or null if none do. Replaces a binary `evm ? sui : evm` toggle
-// that silently mispointed once Solana became a third chain — the "switch chain" hint must never send
-// a user to an equally-empty chain.
+  { id: "evm", label: "Arc", network: "Mainnet · 5042" },
+];
 export function firstOtherChainWithVaults(
-  active: OptionsChainKind,
-  hasVaults: (chain: OptionsChainKind) => boolean,
+  _active: OptionsChainKind,
+  _hasVaults: (chain: OptionsChainKind) => boolean,
 ): OptionsChainKind | null {
-  return SUPPORTED_CHAINS.map((c) => c.id).find((id) => id !== active && hasVaults(id)) ?? null
+  void _active;
+  void _hasVaults;
+  return null;
 }
-
-export const chainLabel = (id: OptionsChainKind): string =>
-  SUPPORTED_CHAINS.find((c) => c.id === id)?.label ?? id
-
-const SUI_ADDRESS_RE = /^0x[0-9a-fA-F]{64}$/
-// A base58-encoded 32-byte Solana pubkey renders to 32–44 chars in the base58 alphabet (no 0 O I l).
-const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
-
-// The chain the user last picked, or null if none is stored. The DEFAULT (when null / undeployed) is
-// decided by `initialChain`/`defaultChain` in deployments.ts, which knows which chains actually shipped a
-// deployment — so we never hard-default to a chain (evm) that a Solana-only run can't boot.
+export const chainLabel = (_id: OptionsChainKind): string => {
+  void _id;
+  return "Arc";
+};
 export function readStoredChain(): OptionsChainKind | null {
-  if (typeof window === 'undefined') return null
-  const stored = sessionStorage.getItem(SESSION_CHAIN_KEY)
-  if (SUPPORTED_CHAINS.some(chain => chain.id === stored)) return stored as OptionsChainKind
-  return null
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem(SESSION_CHAIN_KEY) === "evm" ? "evm" : null;
 }
-
-// Placeholder for a transfer-recipient input, matched to each chain's address shape (EVM/Sui are
-// 0x-hex, Solana is base58) so we never prompt a Solana user for a "0x…" address.
-export function recipientPlaceholder(chain: OptionsChainKind): string {
-  if (chain === 'sui') return 'Transfer to Sui address…'
-  if (chain === 'solana') return 'Transfer to Solana address…'
-  return 'Transfer to 0x…'
+export function recipientPlaceholder(_chain: OptionsChainKind): string {
+  void _chain;
+  return "Transfer to 0x…";
 }
-
-export function isValidRecipientAddress(chain: OptionsChainKind, value: string): boolean {
-  if (chain === 'sui') return SUI_ADDRESS_RE.test(value)
-  if (chain === 'solana') return SOLANA_ADDRESS_RE.test(value)
-  return isAddress(value)
+export function isValidRecipientAddress(_chain: OptionsChainKind, value: string): boolean {
+  return isAddress(value);
 }

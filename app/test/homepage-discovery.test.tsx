@@ -16,10 +16,10 @@ it('retains cached records as stale instead of claiming they remain live during 
   expect(result.current.streams).toEqual([{ id: 'm', isLive: false, stale: true }])
   expect(result.current.liveVaults).toEqual([{ vaultId: 'v', stale: true }])
 });
-it('discovers every chain without wallet context and refreshes finished broadcasts', async () => {
+it('discovers Arc streams without wallet context and refreshes finished broadcasts', async () => {
   vi.useFakeTimers()
-  const live = { streams: [{ id: 'sol-show', chain: 'solana', isLive: true }, { id: 'sui-show', chain: 'sui', isLive: true }], lifetimeVaults: [] }
-  const ended = { ...live, streams: [{ id: 'sol-show', chain: 'solana', isLive: false, streamStatus: 'ended' }], lifetimeVaults: [{ streamId: 'sol-show', vaultId: 'result' }] }
+  const live = { streams: [{ id: 'show-one', chain: 'evm', isLive: true }, { id: 'show-two', chain: 'evm', isLive: true }], lifetimeVaults: [] }
+  const ended = { ...live, streams: [{ id: 'show-one', chain: 'evm', isLive: false, streamStatus: 'ended' }], lifetimeVaults: [{ streamId: 'show-one', vaultId: 'result' }] }
   ports.fetch.mockResolvedValueOnce(live).mockResolvedValue(ended)
   const { result, unmount } = renderHook(() => useHomepageData())
   await act(async () => { await Promise.resolve() })

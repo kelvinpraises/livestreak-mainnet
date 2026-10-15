@@ -5,7 +5,7 @@ import appCss from "../styles.css?url";
 
 // The app is a client-only SPA (ssr disabled in vite.config.ts). The real app
 // tree — providers + wallet/chain SDKs — lives in RootApp and is loaded lazily
-// so its server-incompatible deps (@mysten/sui, Holepunch native modules) never
+// so its server-incompatible deps (Holepunch native modules) never
 // enter the prerendered shell's module graph.
 const RootApp = lazy(() => import("#/components/template/root-app.tsx"));
 
@@ -52,7 +52,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   // Client-only. The prerender/SSR pass renders just the shell (above); RootApp —
-  // and with it the providers and wallet/chain SDKs (viem, ethers, @mysten/sui,
+  // and with it the providers and wallet/chain SDKs (viem, ethers,
   // Holepunch) — mounts only after hydration. This keeps that whole graph out of
   // the server render, which a pure SPA never serves, and avoids prerendering the
   // node-native deps (the sodium __filename error). Server and first client render

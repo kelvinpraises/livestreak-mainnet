@@ -20,7 +20,6 @@ import {
 import { useWalletContext } from '#/providers/wallet-provider.tsx'
 import { useOptionsContext } from '#/providers/options-provider'
 import { formatUSDCFull } from '#/utils/format.ts'
-import { testOptionsSeed } from '#/utils/env'
 import { ChainSelector } from '#/components/molecules/chain-selector'
 
 const iconSwap = {
@@ -45,7 +44,7 @@ export function ConnectButton() {
   const [modalOpen, setModalOpen] = useState(false)
   // Test-only: pre-fill from `VITE_OPTIONS_SEED` so the deterministic E2E wallet derives without
   // typing. Empty string in normal builds → unchanged manual-password flow.
-  const [password, setPassword] = useState(testOptionsSeed() ?? '')
+  const [password, setPassword] = useState('')
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     const open = () => setModalOpen(true)
@@ -62,13 +61,13 @@ export function ConnectButton() {
   }
 
   function openModal() {
-    setPassword(testOptionsSeed() ?? '')
+    setPassword('')
     setModalOpen(true)
   }
 
   function closeModal() {
     setModalOpen(false)
-    setPassword(testOptionsSeed() ?? '')
+    setPassword('')
   }
 
   async function handleConnect() {
@@ -180,7 +179,7 @@ export function ConnectButton() {
           )}
 
           {/* Pick the chain BEFORE connecting — selecting a pill sets chainRef so `connect` derives the
-              right (EVM Safe vs Sui) address from the same password. Disabled mid-derivation. */}
+              Arc Safe address from the same password. Disabled mid-derivation. */}
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', fontWeight: 600, marginBottom: 8 }}>
               Network
@@ -246,7 +245,7 @@ export function ConnectButton() {
             fontSize: 11, color: 'rgba(255,255,255,0.2)',
             textAlign: 'center', marginTop: 16,
           }}>
-            Gasless &middot; testnet
+            Arc mainnet &middot; USDC
           </p>
         </DialogContent>
       </Dialog>

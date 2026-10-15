@@ -100,7 +100,7 @@ describe('durable viewer funding', () => {
   })
   it('isolates wallet and chain recovery records', async () => {
     await session.run(intent, ports)
-    expect(loadFunding(storage, 'solana', 'viewer')).toBeNull()
+    expect(loadFunding(storage, 'unsupported', 'viewer')).toBeNull()
     expect(loadFunding(storage, 'evm', 'other')).toBeNull()
   })
 })

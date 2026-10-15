@@ -3,7 +3,7 @@ import type { OptionsFunctionView, OptionsNftPanel } from '@livestreak/options'
 import { findOptionsFunction, hasBalanceReadout } from '../src/utils/options'
 
 // CONCERN 2 — balance/runway readout is DATA-gated (field presence), not chain-gated. EVM supplies
-// `balanceUSDC`; Sui and Solana omit it (documented SDK gaps), so the readout stays hidden there without
+// `balanceUSDC`; incomplete snapshots may omit it, so the readout stays hidden without
 // the app faking a zero.
 describe('hasBalanceReadout — data-presence gate (chain-agnostic)', () => {
   const account = (over: Partial<OptionsNftPanel['account']>): OptionsNftPanel['account'] =>
@@ -17,7 +17,7 @@ describe('hasBalanceReadout — data-presence gate (chain-agnostic)', () => {
     expect(hasBalanceReadout(account({ balanceUSDC: 0, balanceRaw: '0' }))).toBe(true)
   })
 
-  it('hides the readout when balanceUSDC is absent (Sui / Solana gap) — no faked number', () => {
+  it('hides the readout when balanceUSDC is absent (incomplete snapshot) — no faked number', () => {
     expect(hasBalanceReadout(account({}))).toBe(false)
   })
 })

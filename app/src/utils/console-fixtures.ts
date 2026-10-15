@@ -50,9 +50,9 @@ const observe: ConsoleModel = {
             { name: 'title', value: '' },
             {
               name: 'chain',
-              value: 'eip155:31337',
+              value: 'eip155:5042',
               kind: 'select',
-              options: [{ label: 'eip155:31337' }, { label: 'solana devnet' }, { label: 'sui testnet' }],
+              options: [{ label: 'eip155:5042' }],
             },
           ],
         },
@@ -61,7 +61,7 @@ const observe: ConsoleModel = {
     },
     obs: {
       title: 'Friday cup stream',
-      sub: 'ready · eip155:31337 · Friday Night Cup registered',
+      sub: 'ready · eip155:5042 · Friday Night Cup registered',
       verbs: [
         {
           name: 'Configure capture',
@@ -127,8 +127,8 @@ const observe: ConsoleModel = {
       verbs: [],
       history: [
         'gateway · connected',
-        'host · reachable · 8787',
-        'chain · eip155:31337',
+        'host · reachable · 8788',
+        'chain · eip155:5042',
         'board · revision 42',
       ],
     },
@@ -282,9 +282,9 @@ const options: ConsoleModel = {
     },
     state: {
       title: 'State',
-      sub: 'polling 3s · solana devnet',
+      sub: 'polling 3s · Arc mainnet',
       verbs: [],
-      history: ['chain · solana devnet', 'polling · 3s', 'writes · sponsored (token-free)'],
+      history: ['chain · Arc mainnet', 'polling · 3s', 'writes · sponsored (token-free)'],
     },
     // The market card IS the position NFT: one NFT per market holds the shared balance every lane
     // streams from. Low runway → top up HERE, not on a vault.
@@ -360,7 +360,7 @@ const options: ConsoleModel = {
     // LVST is wallet-level: no session needed to stake or unstake. It carries its own chain choice.
     lvst: {
       title: 'LVST',
-      sub: '845.49 on solana devnet · 0 staked · 0 dividends pending',
+      sub: '845.49 on Arc mainnet · 0 staked · 0 dividends pending',
       verbs: [
         {
           name: 'Stake',
@@ -368,9 +368,9 @@ const options: ConsoleModel = {
           fields: [
             {
               name: 'chain',
-              value: 'solana devnet',
+              value: 'Arc mainnet',
               kind: 'select',
-              options: [{ label: 'eip155:31337' }, { label: 'solana devnet' }, { label: 'sui testnet' }],
+              options: [{ label: 'eip155:5042' }],
             },
             { name: 'amount', value: '500', kind: 'number' },
           ],

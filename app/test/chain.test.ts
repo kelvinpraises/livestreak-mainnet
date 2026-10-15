@@ -22,98 +22,25 @@ function installSessionStorage(): void {
   ;(globalThis as Record<string, unknown>).sessionStorage = shim
 }
 
-describe('readStoredChain', () => {
-  beforeEach(() => {
-    installSessionStorage()
-    sessionStorage.clear()
-  })
-
-  it('round-trips solana', () => {
-    sessionStorage.setItem(SESSION_CHAIN_KEY, 'solana')
-    expect(readStoredChain()).toBe('solana')
-  })
-
-  it('ignores paused sui and restores evm; returns null for unset/unknown (the default is decided by initialChain)', () => {
-    sessionStorage.setItem(SESSION_CHAIN_KEY, 'sui')
-    expect(readStoredChain()).toBeNull()
+describe('Arc mainnet selection', () => {
+  beforeEach(installSessionStorage)
+  it('restores only the mainnet EVM session', () => {
     sessionStorage.setItem(SESSION_CHAIN_KEY, 'evm')
     expect(readStoredChain()).toBe('evm')
-    // No hard-coded default here anymore: unknown / unset → null, so a Solana-only run never boots evm.
-    sessionStorage.setItem(SESSION_CHAIN_KEY, 'dogecoin')
+    sessionStorage.setItem(SESSION_CHAIN_KEY, 'unsupported')
     expect(readStoredChain()).toBeNull()
     sessionStorage.clear()
     expect(readStoredChain()).toBeNull()
   })
-})
-
-describe('SUPPORTED_CHAINS', () => {
-  it('marks solana as a deployed runtime chain on localnet', () => {
-    const solana = SUPPORTED_CHAINS.find((c) => c.id === 'solana')
-    expect(solana).toBeDefined()
-    expect(solana?.network).toBe('localnet · 8899')
+  it('advertises only Arc mainnet', () => {
+    expect(SUPPORTED_CHAINS).toEqual([{ id: 'evm', label: 'Arc', network: 'Mainnet · 5042' }])
+    expect(firstOtherChainWithVaults('evm', () => true)).toBeNull()
   })
-})
-
-describe('recipientPlaceholder', () => {
-  it('never prompts a solana user for a 0x address', () => {
-    expect(recipientPlaceholder('solana')).toBe('Transfer to Solana address…')
-    expect(recipientPlaceholder('solana')).not.toContain('0x')
-  })
-
-  it('keeps the sui + evm placeholders chain-accurate', () => {
-    expect(recipientPlaceholder('sui')).toBe('Transfer to Sui address…')
+  it('accepts only EVM recipients', () => {
     expect(recipientPlaceholder('evm')).toBe('Transfer to 0x…')
-  })
-})
-
-describe('firstOtherChainWithVaults', () => {
-  it('skips the active chain and returns the first OTHER chain that has vaults', () => {
-    // A paused chain cannot be suggested even if it has old vaults.
-    expect(firstOtherChainWithVaults('solana', c => c === 'sui')).toBeNull()
-  })
-
-  it('never points at an equally-empty chain (returns null when no other chain has vaults)', () => {
-    expect(firstOtherChainWithVaults('evm', c => c === 'evm')).toBe(null)
-    expect(firstOtherChainWithVaults('solana', () => false)).toBe(null)
-  })
-
-  it('honours SUPPORTED_CHAINS ordering when multiple others qualify', () => {
-    // Paused Sui is excluded, so EVM is the available alternative.
-    expect(firstOtherChainWithVaults('solana', c => c === 'sui' || c === 'evm')).toBe('evm')
-  })
-})
-
-describe('isValidRecipientAddress (solana)', () => {
-  it('accepts a valid base58 32-byte pubkey', () => {
-    // The deployed localnet program id — a real 44-char base58 pubkey.
-    expect(
-      isValidRecipientAddress('solana', 'CZnAfgbnbVtuXDRQynwL9XMHqeQ7wngbodRihGLbErK8'),
-    ).toBe(true)
-    // System program (32 chars, all base58) — the anon viewer.
-    expect(isValidRecipientAddress('solana', '11111111111111111111111111111111')).toBe(true)
-  })
-
-  it('rejects non-base58 / wrong-length / evm-hex input', () => {
-    expect(isValidRecipientAddress('solana', '0x000000000000000000000000000000000000dead')).toBe(
-      false,
-    ) // contains 0, x — not base58
-    expect(isValidRecipientAddress('solana', 'short')).toBe(false)
-    expect(isValidRecipientAddress('solana', '0OIl00OIl00OIl00OIl00OIl00OIl00OI')).toBe(false) // 0 O I l excluded
-    expect(isValidRecipientAddress('solana', '')).toBe(false)
-  })
-
-  it('still routes evm + sui to their own validators', () => {
-    expect(
-      isValidRecipientAddress('evm', '0x000000000000000000000000000000000000dEaD'),
-    ).toBe(true)
-    expect(isValidRecipientAddress('evm', 'CZnAfgbnbVtuXDRQynwL9XMHqeQ7wngbodRihGLbErK8')).toBe(
-      false,
-    )
-    expect(
-      isValidRecipientAddress(
-        'sui',
-        '0x000000000000000000000000000000000000000000000000000000000000dead',
-      ),
-    ).toBe(true)
+    expect(isValidRecipientAddress('evm', '0x000000000000000000000000000000000000dEaD')).toBe(true)
+    for (const value of ['', 'short', '0x1234', 'not-an-address']) {
+      expect(isValidRecipientAddress('evm', value)).toBe(false)
+    }
   })
 })

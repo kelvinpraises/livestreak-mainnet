@@ -25,7 +25,7 @@ export interface FundingPorts {
   verify: (intent: FundingIntent) => Promise<boolean>
   receipt: (txId: string) => Promise<boolean | undefined>
 }
-const key = (chain: string, owner: string) => `livestreak.funding.v1:${chain}:${owner}`
+const key = (chain: string, owner: string) => `livestreak-mainnet.funding.v1:${chain}:${owner}`
 export function loadFunding(
   storage: Storage,
   chain: string,

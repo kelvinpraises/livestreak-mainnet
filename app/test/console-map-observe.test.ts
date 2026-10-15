@@ -232,7 +232,7 @@ describe('mapObserve (families)', () => {
             runId: 'run-1',
             observations: {
               [OBS]: { title: 'Friday Cup', chain: 'eip155:31337', createdAtMs: 1 },
-              [OBS2]: { title: 'Street Chess', chain: 'solana', createdAtMs: 2 },
+              [OBS2]: { title: 'Street Chess', chain: 'evm', createdAtMs: 2 },
             },
           },
         }),
@@ -241,7 +241,7 @@ describe('mapObserve (families)', () => {
         [`obs:${OBS2}:run`]: cell('created', { readonly: { runId: 'run-1', obsId: OBS2 } }),
         [`obs:${OBS2}:pause`]: cell('idle'),
         [`obs:${OBS2}:market`]: cell('none', {
-          readonly: { registrationState: 'none', title: 'Street Chess', chain: 'solana' },
+          readonly: { registrationState: 'none', title: 'Street Chess', chain: 'evm' },
         }),
       },
     }
@@ -256,7 +256,7 @@ describe('mapObserve (families)', () => {
       'Friday Cup',
       'Street Chess',
     ])
-    expect(model.focus[`obs:${OBS2}`]?.sub).toBe('created · solana · no market yet')
+    expect(model.focus[`obs:${OBS2}`]?.sub).toBe('created · evm · no market yet')
     // Each observation carries its own frontier card; the live one is quiet.
     expect(model.attention.map((a) => a.title)).toEqual(['Prepare Street Chess'])
     expect(

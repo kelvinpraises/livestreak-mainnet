@@ -9,7 +9,7 @@ const navLinks = [
 ]
 
 // Client-only application root. Lazy-loaded from __root.tsx so the chain SDKs it
-// pulls in (@livestreak/options -> @mysten/sui, @livestreak/wallet -> Holepunch
+// pulls in (@livestreak/options -> @livestreak/wallet -> Holepunch
 // native deps) never enter the server/shell module graph — they cannot be
 // evaluated in the Node ESM server build (see app is SPA, vite.config.ts).
 export default function RootApp() {

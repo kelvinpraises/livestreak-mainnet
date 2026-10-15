@@ -5,9 +5,7 @@ import { formatUSDCFull, formatLvst } from '#/utils/format'
 import type { FlowState, WalletState } from '#/types/ui'
 import { isOptionsModeEnabled } from '#/utils/env'
 import { useOptionsContext } from '#/providers/options-provider'
-import { useWalletActions } from '#/hooks/use-wallet-actions'
 import { ScoreUSD } from '#/components/atoms/score-usd'
-import { EVM_NETWORK } from '#/utils/chain'
 
 interface Props {
   flow: FlowState
@@ -19,7 +17,6 @@ export function BalanceBar({ flow, wallet }: Props) {
   const options = useOptionsContext()
   const accountVerified = optionsEnabled && options.isConnected && !!options.board && !options.isLoading && !options.error
   const useOptions = accountVerified
-  const walletActions = useWalletActions()
 
   const [expanded, setExpanded] = useState(false)
   const [stakeAmount, setStakeAmount] = useState('')
@@ -165,25 +162,7 @@ export function BalanceBar({ flow, wallet }: Props) {
             <Wallet size={13} color="rgba(255,255,255,0.35)" />
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.05em' }}>USDC</span>
             {accountVerified ? <ScoreUSD value={wallet.usdcBalance} className="mono" style={{ fontSize: 13, fontWeight: 600, color: '#00c8ff' }} /> : <span className="mono">—</span>}
-            {walletActions.canTopUp && (
-              <button
-                onClick={() => { setActionError(null); setExpanded(true); void walletActions.topUp().catch(err => setActionError(err instanceof Error ? err.message : 'Test USDC mint failed.')) }}
-                disabled={walletActions.isToppingUp}
-                title={`Mint 100 test USDC on ${EVM_NETWORK.name}`}
-                aria-label="Mint test USDC"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 18, height: 18, marginLeft: 2, borderRadius: 5,
-                  border: '1px solid rgba(0,200,255,0.3)', background: 'rgba(0,200,255,0.08)',
-                  color: '#00c8ff', fontSize: 13, lineHeight: 1, fontWeight: 600,
-                  cursor: walletActions.isToppingUp ? 'wait' : 'pointer',
-                  opacity: walletActions.isToppingUp ? 0.5 : 1,
-                  padding: 0,
-                }}
-              >
-                {walletActions.isToppingUp ? '·' : '+'}
-              </button>
-            )}
+
           </div><div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.08)', margin: '0 12px' }} /></>
         )}
         <button onClick={() => setExpanded(e => !e)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>

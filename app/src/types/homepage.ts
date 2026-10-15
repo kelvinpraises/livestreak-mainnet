@@ -1,7 +1,7 @@
 /** Homepage card shapes projected from the Host catalog. */
 
-/** Discovery spans all chains; vault tags identify the chain used for signing. */
-export type HomepageChain = 'evm' | 'sui' | 'solana'
+/** Discovery and signing use Arc mainnet. */
+export type HomepageChain = 'evm'
 
 export interface HomepageStreamCard {
   id: string

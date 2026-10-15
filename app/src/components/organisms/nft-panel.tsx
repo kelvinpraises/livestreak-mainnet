@@ -20,8 +20,7 @@ export function NftPanel() {
 
   if (!optionsEnabled || !options.isConnected || !options.board) return null
 
-  // setApprovalForAll / approve are ERC-721 (EVM) concepts — Sui AND Solana have no operator-approval
-  // model, so gate the whole approval apparatus on EVM (mirrors the per-NFT `showApprove` below).
+  // ERC-721 approval controls follow the active wallet capabilities.
   const isEvm = options.chain === 'evm'
   const nfts = options.board.panel.nfts
   const approveAllFn = options.findFunction('setApprovalForAll', fn => fn.target?.kind === 'global')
@@ -172,7 +171,7 @@ function NftRow({
       </div>
 
       {/* Shared Drips balance (live-ticking) + runway + realized winnings. DATA-gated, not chain-gated:
-          renders on any chain whose reader supplies `balanceUSDC` (EVM today; Sui/Solana omit it). */}
+          renders on any chain whose reader supplies `balanceUSDC` without fabricating missing values. */}
       {hasBalanceReadout(nft.account) && (
         <RunwayReadout account={nft.account} pnl={nft.pnl} />
       )}

@@ -33,7 +33,7 @@ export interface WebSocketLike {
 export type WebSocketFactory = (url: string) => WebSocketLike
 
 export interface HostWssTransportOptions {
-  // Host HTTP origin, e.g. http://127.0.0.1:8787 (ws URL is derived by swapping the scheme).
+  // Host HTTP origin, e.g. http://127.0.0.1:8788 (ws URL is derived by swapping the scheme).
   readonly retryDelaysMs?: readonly number[]
   readonly readyTimeoutMs?: number
   readonly hostBaseUrl: string

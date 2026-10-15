@@ -19,8 +19,7 @@ const nodeRequire = createRequire(import.meta.url)
 // keep native builtins. We therefore scope all polyfills to the client only.
 // Externalized from the Nitro *server* bundle (scope-level so subpaths + sibling
 // packages match): the wallet SDK and its native deps. Kept external so Rollup
-// never bundles their native code into the server output. @mysten/sui is added to
-// the same external list at the nitro() call below. With SSR disabled none of
+// never bundles their native code into the server output. With SSR disabled none of
 // these are evaluated server-side anyway (they load only in the RootApp client
 // chunk); externalizing just keeps the shell build light.
 const walletExternals = [
@@ -115,31 +114,14 @@ const config = defineConfig({
     },
   },
   optimizeDeps: {
-    // Both workspace packages the app imports are served UNBUNDLED (from their dist), never esbuild
-    // pre-bundled. @livestreak/options used to sit in `include`, which forced a re-bundle on every
-    // dist rebuild — the "options pre-bundle staleness incident" that dev.sh papered over with
-    // `--force`. Excluding it retires that workaround: dev serves packages/options/dist/*.js directly,
-    // so a package rebuild is picked up with no forced re-optimize (schema and host already resolve
-    // this way). @livestreak/contracts stays excluded for a second, independent reason: its solana
-    // barrel's engine-wasm reader loads the WASM via `new URL("./wasm/…_bg.wasm", import.meta.url)`,
-    // and esbuild pre-bundling flattens that module and silently breaks the asset URL. Served as-is,
-    // `import.meta.url` points at its real workspace location and the .wasm resolves — and since
-    // options (which imports @livestreak/contracts/solana) is no longer pre-bundled, nothing drags
-    // the wasm edge into esbuild either. Dev-server file access to packages/*/dist needs no fs.allow
-    // entry: vite's default workspace-root detection resolves to the repo root (the dir with
-    // package-lock.json), which already contains the workspace packages.
+    // Serve workspace distributions directly so rebuilt SDKs stay current.
     exclude: ['@livestreak/options', '@livestreak/contracts'],
   },
   plugins: [
     nodePolyfillShimResolver(),
     devtools(),
     nitro({
-      // Externalized from the server bundle so Rollup never inlines their heavy /
-      // native code: @mysten/sui (large CJS) and the wallet's Holepunch deps. With
-      // SSR off they are only loaded client-side (RootApp lazy chunk), so the
-      // server/shell build never evaluates them — inlining @mysten here previously
-      // OOM'd the build, and externalizing it under SSR 500'd every route.
-      rollupConfig: { external: [/^@sentry\//, /^@mysten\//, ...walletExternals] },
+      rollupConfig: { external: [/^@sentry\//, ...walletExternals] },
     }),
     ...clientScopedPolyfills({
       include: ['buffer', 'crypto', 'stream', 'assert', 'process', 'util', 'events'],

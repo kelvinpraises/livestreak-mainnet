@@ -1,5 +1,4 @@
-import { testUsdcMintTransaction, TEST_USDC_MINT_ABI } from "#/utils/test-usdc";
-import { EVM_NETWORK } from "#/utils/chain";
+import { AaCapabilityDescriptor } from '@livestreak/host'
 import {
   ClaimSession,
   loadClaim,
@@ -17,8 +16,6 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  createPublicClient,
-  http,
   sha256,
   toBytes,
   hexToBytes,
@@ -30,10 +27,7 @@ import {
 import { Schema } from 'effect'
 import {
   createWalletManager,
-  createSuiReadClient,
   readUserOperationSuccess,
-  pollUntilUserOperationIncluded,
-  assertUserOperationSucceeded,
   type WalletConfigByChain,
 } from '@livestreak/wallet'
 import type { VerifiedVaultMandate } from '@livestreak/schema'
@@ -46,11 +40,8 @@ import {
 } from '#/utils/funding-session'
 import {
   EvmWalletInitConfig,
-  solanaWalletInitFromDescriptor,
   type WalletInit,
 } from '@livestreak/schema'
-import { localnetDeployment } from '@livestreak/contracts/sui'
-import { localnetDeployment as solanaLocalnetDeployment } from '@livestreak/contracts/solana/deployments/localnet'
 import {
   asTxId,
   asTokenId,
@@ -60,7 +51,6 @@ import {
   bridgeActionScope,
   createOptionsBridge,
   createOptionsRuntime,
-  createOptionsSuiConfig,
   perMinUSDCToRate,
   resolveOptionsAccountAddress,
   usdcToRaw,
@@ -80,10 +70,8 @@ import {
   HOST_BASE_URL,
   EVM_CHAIN_ID,
   isOptionsModeEnabled,
-  testOptionsSeed,
 } from '#/utils/env'
 import {
-  EVM_TEST_USDC,
   buildOptionsContractAddresses,
   initialChain,
   isChainDeployed,
@@ -107,8 +95,8 @@ import {
 export type { OptionsChainKind }
 
 const STEALTH_DOMAIN = 'livestreak-stealth-v1'
-const SESSION_SECRET_KEY = 'livestreak_stealth_secret'
-const SAFE_ADDR_CACHE_PREFIX = 'livestreak_safe_addr_'
+const SESSION_SECRET_KEY = 'livestreak_mainnet_stealth_secret'
+const SAFE_ADDR_CACHE_PREFIX = 'livestreak_mainnet_safe_addr_'
 const APP_CALLER = { id: 'app', trusted: true } satisfies BridgeCaller
 
 // S12/A8 — the AA Safe address is a deterministic (counterfactual) function of the seed + chain, but
@@ -142,31 +130,6 @@ function writeCachedSafeAddress(
   }
 }
 
-interface AaChainDescriptor {
-  chainId: number
-  name: string
-  entryPoint: string
-  safeModule?: string
-  bundlerPath: string
-  rpcUrl?: string
-}
-
-// Advertised only when the host's Kora paymaster leg is up (see host buildSolanaSponsorshipDescriptor).
-// Absent → self-pay solana walletInit (read-only board still works; writes fund their own fee).
-interface SolanaSponsorshipDescriptor {
-  paymasterPath: string
-  payerAddress?: string
-  feeTokens?: string[]
-  rpcUrl?: string
-}
-
-interface AaCapabilityDescriptor {
-  version: '0.1.0'
-  paymasterPath: string
-  chains: AaChainDescriptor[]
-  solanaSponsorship?: SolanaSponsorshipDescriptor
-}
-
 interface OptionsContextValue {
   enabled: boolean
   ready: boolean
@@ -195,7 +158,6 @@ interface OptionsContextValue {
   disconnect: () => void
   /** Re-read the connected user's board/balance now (e.g. after an out-of-band wallet top-up). */
   refresh: () => Promise<void>
-  mintTestUsdc: (amountUsd?: number) => Promise<void>
   setActiveMarketId: (marketId: string | undefined) => void
   findFunction: (
     name: string,
@@ -250,7 +212,7 @@ const OptionsContext = createContext<OptionsContextValue | null>(null)
 // The paused-lane registry lives in the SDK runtime (canonical). The runtime survives the 3s poll itself;
 // these adapters are the persistence PORT it calls — sessionStorage so paused state survives a reload. The
 // runtime holds rate as bigint, which isn't JSON-serializable, so the stored form carries rate as a string.
-const PAUSED_LANES_KEY = 'livestreak.pausedLanes'
+const PAUSED_LANES_KEY = 'livestreak-mainnet.pausedLanes'
 
 type StoredPausedLane = {
   tokenId: string
@@ -304,9 +266,9 @@ function buildWalletInit(descriptor: AaCapabilityDescriptor): WalletInit {
     chainId: EVM_CHAIN_ID,
     provider: rpcUrl,
     bundlerUrl: `${HOST_BASE_URL}${chain.bundlerPath}`,
-    paymasterUrl: `${HOST_BASE_URL}${chain.bundlerPath.replace("/aa/bundler/", "/aa/paymaster/")}`,
-    isSponsored: true,
-    useNativeCoins: false,
+    paymasterUrl: `${HOST_BASE_URL}${chain.paymasterPath}`,
+    isSponsored: descriptor.sponsorshipMode !== 'none',
+    useNativeCoins: descriptor.sponsorshipMode === 'none',
     entryPointAddress: chain.entryPoint,
     safe4337ModuleAddress: chain.safeModule ?? aa.safe4337Module,
     safeModulesSetupAddress: aa.safeModuleSetup,
@@ -328,56 +290,15 @@ function buildWalletInit(descriptor: AaCapabilityDescriptor): WalletInit {
   return { chain: 'evm', seedSource: 'raw', config: evmConfig }
 }
 
-const SOLANA_RPC_URL = solanaLocalnetDeployment.rpc
-
-// Build the solana WalletInit from the host descriptor. When the descriptor advertises a
-// Delegates to the shared schema helper so the app and the CLI gateway map the host's advertised
-// Solana sponsorship the same way (Kora paymaster triple → fee-payer co-signed writes; else self-pay).
-function buildSolanaWalletInit(descriptor: AaCapabilityDescriptor): WalletInit {
-  return solanaWalletInitFromDescriptor(descriptor.solanaSponsorship, {
-    hostBaseUrl: HOST_BASE_URL,
-    fallbackRpc: SOLANA_RPC_URL,
-    network: 'localnet',
-  })
-}
-
 // Read-only viewer used to populate the board for a disconnected visitor — a dummy address that owns
 // nothing, so the board carries the market + vaults with zero positions. Writes stay gated on isConnected.
-const ANON_VIEWER: Record<OptionsChainKind, string> = {
-  evm: '0x000000000000000000000000000000000000dead',
-  sui: '0x000000000000000000000000000000000000000000000000000000000000dead',
-  // System program — a valid base58 pubkey that owns nothing, so the board renders zero positions.
-  solana: '11111111111111111111111111111111',
-}
+const ANON_VIEWER: Record<OptionsChainKind, string> = { evm: '0x000000000000000000000000000000000000dead' }
 
 function buildChainConfig(
-  chain: OptionsChainKind,
+  _chain: OptionsChainKind,
   secret: Uint8Array,
   walletInit: WalletInit | null,
 ): OptionsChainConfig {
-  if (chain === 'sui') {
-    return {
-      ...createOptionsSuiConfig({ deployment: localnetDeployment, seed: secret }),
-      hostUrl: HOST_BASE_URL,
-    }
-  }
-
-  if (chain === 'solana') {
-    if (!walletInit) throw new Error('Options wallet config not loaded')
-    const accounts = solanaLocalnetDeployment.accounts
-    return {
-      walletInit,
-      seed: secret,
-      addresses: {
-        programId: solanaLocalnetDeployment.programId,
-        usdcMint: accounts.usdcMint,
-        ...(accounts.lvstMint === undefined ? {} : { lvstMint: accounts.lvstMint }),
-      },
-      readRpcUrl: solanaLocalnetDeployment.rpc,
-      includeProtocolSummary: true,
-      hostUrl: HOST_BASE_URL,
-    }
-  }
 
   if (!walletInit) throw new Error('Options wallet config not loaded')
 
@@ -393,10 +314,9 @@ function buildChainConfig(
 
 export function OptionsProvider({ children }: { children: ReactNode }) {
   const enabled = isOptionsModeEnabled()
-  // Start on the last valid pick, else the smart default (the running chain / first deployed) — never a
-  // hard-coded evm that a Solana-only run can't boot. `initialChain` is deployment-aware.
+  // Restore only the dedicated Arc session.
   const [chain, setChainState] = useState<OptionsChainKind>(() => initialChain(enabled))
-  const [ready, setReady] = useState(() => !enabled || initialChain(enabled) === 'sui')
+  const [ready, setReady] = useState(() => !enabled)
   const [isConnected, setIsConnected] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [derivationStep, setDerivationStep] = useState<string | null>(null)
@@ -537,7 +457,7 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
   const bootAnonymous = useCallback(async () => {
     if (!activeMarketIdRef.current) return
     if (!isChainDeployed(chainRef.current)) return // read-only board: silently skip an undeployed chain
-    if (chainRef.current !== 'sui' && !walletInitRef.current) return
+    if (!walletInitRef.current) return
     try {
       await bootRuntime(new Uint8Array(32), ANON_VIEWER[chainRef.current] as UserAddress)
     } catch (err) {
@@ -559,13 +479,7 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
         setDerivationStep('Restoring your wallet address…')
         return cachedAddr as UserAddress
       }
-      // EVM Safe counterfactual derivation is a slow (~1 min first-time) 4337 apparatus; Sui + Solana
-      // derive a native Ed25519 address instantly, so don't threaten the user with a minute-long wait.
-      setDerivationStep(
-        chainKind === 'evm'
-          ? 'Deriving your Safe address (first time, ~1 min)…'
-          : 'Deriving your wallet address…',
-      )
+      setDerivationStep('Deriving your Safe address…')
       const user = await resolveOptionsAccountAddress(chainConfig)
       writeCachedSafeAddress(secret, chainKind, user)
       return user
@@ -573,19 +487,15 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  // Load the host AA descriptor and build the walletInit for the given chain (EVM Safe/4337 apparatus
-  // vs. Solana Kora-paymaster triple). Sui needs no descriptor and skips this path entirely.
+  // Bind the Arc Safe configuration to the Host descriptor.
   const loadDescriptor = useCallback(
-    async (chainKind: OptionsChainKind, cancelled: () => boolean) => {
+    async (_chainKind: OptionsChainKind, cancelled: () => boolean) => {
       try {
         const res = await fetch(`${HOST_BASE_URL}/aa/descriptor`)
         if (!res.ok) throw new Error(`AA descriptor HTTP ${res.status}`)
-        const descriptor = (await res.json()) as AaCapabilityDescriptor
+        const descriptor = Schema.decodeUnknownSync(AaCapabilityDescriptor)(await res.json())
         if (cancelled()) return
-        walletInitRef.current =
-          chainKind === 'solana'
-            ? buildSolanaWalletInit(descriptor)
-            : buildWalletInit(descriptor)
+        walletInitRef.current = buildWalletInit(descriptor)
         setReady(true)
       } catch (err) {
         if (!cancelled()) {
@@ -605,10 +515,6 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
     // with a stale config that doesn't match the selected chain (the picker↔board race).
     walletInitRef.current = null
 
-    if (chain === 'sui') {
-      setReady(true)
-      return
-    }
 
     let cancelled = false
     setReady(false)
@@ -621,9 +527,8 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!enabled || !ready || typeof window === 'undefined') return
-    // EVM/Solana wallet config can briefly be unloaded during a chain switch; skip (re-runs once ready
-    // settles) rather than treating it as a derive failure that would wipe the secret. Sui needs none.
-    if (chainRef.current !== 'sui' && !walletInitRef.current) return
+    // Wait until the Arc wallet configuration is loaded.
+    if (!walletInitRef.current) return
     const cached = sessionStorage.getItem(SESSION_SECRET_KEY)
     if (!cached) {
       void bootAnonymous() // disconnected: read-only board for the active market
@@ -690,11 +595,7 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
       if (!SUPPORTED_CHAINS.some(option => option.id === next)) return
       if (writeBusyRef.current || isLoading || next === chainRef.current) return
       sessionStorage.setItem(SESSION_CHAIN_KEY, next)
-      // B: switching chains KEEPS the derived secret and re-derives the new chain's address from the
-      // SAME seed (EVM Safe ⇄ Sui address) with no re-login. We tear down the active chain's runtime
-      // and clear chain-specific display state, but leave SESSION_SECRET_KEY intact; the reconnect
-      // effect (keyed on `chain`) then re-derives + reboots from the cached secret. Only a genuinely
-      // disconnected session (no secret) reverts to the disconnected state.
+      // Reconnect only after the wallet configuration is rebound.
       const wasConnected =
         typeof window !== 'undefined' && !!sessionStorage.getItem(SESSION_SECRET_KEY)
       teardownRuntime()
@@ -718,14 +619,12 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
       // seed (e.g. "1234") so the operator wallet is reproducible across E2E runs. Derivation is
       // byte-identical to the CLI's deriveSeedFromPassword (sha256(STEALTH_DOMAIN + seed)). When the
       // env var is unset this is undefined and the typed password is used exactly as before.
-      const effectiveSeed = testOptionsSeed() ?? password
+      const effectiveSeed = password
       if (!effectiveSeed.trim()) {
         setError('Password required')
         throw new Error('Password required')
       }
-      // EVM (Safe/4337) and Solana (Kora/self-pay) both need a loaded walletInit before we can derive
-      // or write; Sui signs natively with no descriptor, so it is exempt.
-      if (chainRef.current !== 'sui' && !walletInitRef.current) {
+      if (!walletInitRef.current) {
         setError('Options config not ready — is host running?')
         throw new Error('Wallet configuration is unavailable. Check that Host is running.')
       }
@@ -880,47 +779,6 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
     },
     [address, requireBridge, afterWrite],
   )
-
-  const mintTestUsdc = useCallback(async (amountUsd = 100): Promise<void> => {
-    if (!isConnected || !address || chainRef.current !== 'evm') throw new Error(`Connect your ${EVM_NETWORK.name} wallet first.`);
-    if (writeBusyRef.current) throw new Error('Wait for the current wallet action to finish.');
-    const user = address;
-    const secret = sessionStorage.getItem(SESSION_SECRET_KEY);
-    if (!secret || !walletInitRef.current) throw new Error('Reconnect your wallet before minting test USDC.');
-    const cfg = buildChainConfig('evm', hexToBytes(secret as `0x${string}`), walletInitRef.current);
-    const manager = createWalletManager('evm', cfg.seed, cfg.walletInit.config as WalletConfigByChain['evm']);
-    writeBusyRef.current = true;
-    setClaiming(true);
-    const client = createPublicClient({ transport: http(cfg.readRpcUrl ?? EVM_RPC_URL, { timeout: 15000 }) });
-    const pendingKey = `livestreak.test-usdc-mint:${EVM_NETWORK.chainId}:${user.toLowerCase()}`;
-    try {
-      if (!navigator.locks) throw new Error('This browser does not support safe wallet actions across tabs.');
-      await navigator.locks.request(`livestreak.fund:evm:${user}`, { ifAvailable: true }, async lock => {
-        if (!lock) throw new Error('A wallet action is running in another tab.');
-        const account = await manager.getAccount();
-        if ((await account.getAddress()).toLowerCase() !== user.toLowerCase()) throw new Error('Wallet changed. Reconnect before minting.');
-        const tx = testUsdcMintTransaction(await client.getChainId(), EVM_TEST_USDC, user, amountUsd);
-        const reader = await account.toReadOnlyAccount();
-        let hash = localStorage.getItem(pendingKey);
-        if (!hash) {
-          // Simulate the exact contract call before requesting a sponsored transaction.
-          await client.simulateContract({ address: tx.to, abi: TEST_USDC_MINT_ABI, functionName: 'mint', args: [user, parseUnits(String(amountUsd), 6)], account: user });
-          if (chainRef.current !== 'evm' || sessionStorage.getItem(SESSION_SECRET_KEY) !== secret) throw new Error('Wallet changed before submission.');
-          hash = (await account.sendTransaction(tx)).hash;
-          localStorage.setItem(pendingKey, hash);
-        }
-        const result = await pollUntilUserOperationIncluded(reader, hash);
-        if (readUserOperationSuccess(result) === false) localStorage.removeItem(pendingKey);
-        assertUserOperationSucceeded(result);
-        localStorage.removeItem(pendingKey);
-        if (chainRef.current === 'evm' && sessionStorage.getItem(SESSION_SECRET_KEY) === secret) await refreshConnected(user as UserAddress, activeMarketIdRef.current);
-      });
-    } finally {
-      manager.dispose();
-      writeBusyRef.current = false;
-      setClaiming(false);
-    }
-  }, [address, isConnected, refreshConnected]);
 
   const findFunction = useCallback(
     (name: string, match?: (fn: OptionsFunctionView) => boolean) =>
@@ -1139,17 +997,6 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
             hexToBytes(cached as `0x${string}`),
             walletInitRef.current,
           )
-          if (selected === 'sui') {
-            const suiConfig = cfg.walletInit.config as WalletConfigByChain['sui']
-            const rpc = Array.isArray(suiConfig.rpcUrl)
-              ? suiConfig.rpcUrl[0]
-              : suiConfig.rpcUrl
-            const result = await createSuiReadClient(
-              rpc as string,
-              suiConfig.network,
-            ).getTransactionBlock({ digest: txId, options: { showEffects: true } })
-            return result.effects ? result.effects.status.status === 'success' : undefined
-          }
           const manager = createWalletManager(
             selected,
             cfg.seed,
@@ -1398,15 +1245,6 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
             hexToBytes(secret as `0x${string}`),
             walletInitRef.current,
           )
-          if (selected === 'sui') {
-            const c = cfg.walletInit.config as WalletConfigByChain['sui']
-            const rpc = Array.isArray(c.rpcUrl) ? c.rpcUrl[0] : c.rpcUrl
-            const tx = await createSuiReadClient(
-              rpc as string,
-              c.network,
-            ).getTransactionBlock({ digest: hash, options: { showEffects: true } })
-            return tx.effects ? tx.effects.status.status === 'success' : undefined
-          }
           const account = await createWalletManager(
             selected,
             cfg.seed,
@@ -1544,7 +1382,6 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
       connect,
       disconnect,
       refresh: afterWrite,
-      mintTestUsdc,
       setActiveMarketId,
       findFunction,
       findFundFunction: findFundFunctionForVault,
@@ -1592,7 +1429,6 @@ export function OptionsProvider({ children }: { children: ReactNode }) {
       connect,
       disconnect,
       afterWrite,
-      mintTestUsdc,
       setActiveMarketId,
       findFunction,
       findFundFunctionForVault,
