@@ -17,7 +17,7 @@ USDC collateral checks. Deployment cost: 0.481564 USDC; deployer balance afterwa
 0.128436 USDC. Do not redeploy these contracts or spend the balance on market
 stakes as part of cleanup. A real-money market lifecycle has not been verified.
 
-Application migration and cleanup are still in progress. Never present incomplete
+Arc-only runtime migration and cleanup are implemented. Never present incomplete
 application integration, hosting or market lifecycle tests as completed.
 
 ## Asset and environment boundaries
@@ -34,7 +34,7 @@ application integration, hosting or market lifecycle tests as completed.
 
 ## Publishing
 
-Do not release inherited Monad defaults as an Arc application. Public deployment
+Do not release inherited testnet defaults as an Arc application. Public deployment
 workflows remain disabled until the Arc migration and lifecycle verification are
 complete and the repository variable ARC_MAINNET_READY is explicitly set to true.
 Use only this repository's container names, hosts and deployment credentials.

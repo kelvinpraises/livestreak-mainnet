@@ -15,29 +15,36 @@
   separate Vercel project named `livestreak-mainnet`. It has not been deployed yet.
   Do not link or redeploy this checkout into the earlier edition's Vercel project.
 
-## Migration before release
+## Implemented and verified
 
-1. Introduce an explicit Arc network and deployment configuration shared by the
-   application, CLI, SDKs and Host. Verify RPC chain ID 5042 before writes.
-2. Configure USDC collateral as `0x3600000000000000000000000000000000000000`.
-   Replace the deployment's MockUSDC assumption with configured collateral;
-   never deploy a mock collateral token on mainnet.
-3. Remove the mainnet test-mint action. Use 6-decimal ERC-20 values for market
-   funding and payouts, and 18-decimal native values for gas. Both views share
-   one USDC balance. Verify gas reserve behavior without sponsorship.
-4. Configure and verify Arc wallet infrastructure and sponsored operations.
-   Network support alone is not proof that our exact wallet configuration works.
-5. Use a dedicated Turso database and media bucket. Set the catalog deployment
-   scope to the real Arc contracts; do not import testnet records.
-6. Verify the lifecycle with small amounts on Arc testnet first, then deploy and
-   run a small complete mainnet market: publish stream and rules, fund both sides,
-   reject late funding, resolve, verify winner USDC balance changes and losing
-   LVST claims, end the stream and discover/play its verified replay.
+The app, CLI, role SDKs and Host select Arc 5042 and import the canonical deployment.
+Retired chain backends, snapshots, sponsors, dependencies and local-chain bootstrap
+scripts have been removed. Login has no test seed override or test-token faucet.
+The CLI keystore/session/state files and browser recovery records use dedicated
+mainnet namespaces. Host catalog records are scoped to the deployed Arc registry.
 
-Record confirmed contract addresses in the contracts package's deployment
-snapshot and README. Keep production addresses absent until transactions are
-confirmed and the wiring is verified. Standard Anvil does not reproduce Arc's
-native USDC rules; use Arc's runtime or the real network for those checks.
+The deployment journal records 33 successful transactions, costing 0.481564 USDC.
+Ownership, wiring, contract code and real-USDC getters were checked. The real Host
+reader successfully enumerated the Arc registry; no mainnet markets exist yet.
+
+Workspace typechecks and SDK, Host, CLI and frontend builds pass. Solidity tests
+pass (154), alongside the offline role, wallet and schema suites. Host tests pass
+160/160; frontend tests pass 137/137; CLI tests pass 111 with four optional live
+probes skipped. Migration-specific lint passes; repository-wide lint still reports
+inherited unused declarations and import-rule violations outside this cleanup.
+
+## Required before public release
+
+Configure independent Turso and media storage, the public Host HTTPS/WSS URL,
+and an Arc bundler. Verify the exact Safe configuration and any sponsorship policy.
+The application target is `https://livestreak-mainnet.vercel.app`; it is not deployed.
+
+With separately authorized collateral, verify the full journey: broadcast and rules,
+fund both sides, reject late funding, resolve, check USDC payouts and LVST claims,
+end the stream, then discover and play the verified replay. This has not been run
+on mainnet. The remaining 0.128436 USDC deployment balance has not been used for stakes.
+Standard Anvil does not reproduce Arc's native USDC rules. ERC-20 collateral uses
+six decimals; native gas uses eighteen decimals against the same underlying balance.
 
 ## Host configuration
 

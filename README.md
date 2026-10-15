@@ -7,8 +7,8 @@ Arc mainnet (chain ID **5042**) and real USDC. Arc is the only production networ
 for this repository.
 
 **Status: contracts deployed and deployment wiring verified on Arc mainnet.**
-Application integration and the Arc-only cleanup are in progress. A complete
-mainnet market lifecycle has not been verified yet; the public application is not live.
+The app, CLI, role SDKs and Host now target Arc only. A complete mainnet
+market lifecycle has not been verified yet; the public application is not live.
 
 Planned application URL: **https://livestreak-mainnet.vercel.app**.
 This URL is the target for this edition; the Arc application is not deployed yet.

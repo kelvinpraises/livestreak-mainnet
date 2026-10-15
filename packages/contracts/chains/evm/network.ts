@@ -5,7 +5,7 @@ export const ARC_MAINNET = {
   name: "Arc",
   deployment: "arc-mainnet",
   chainId: 5042,
-  rpcUrl: "https://rpc.mainnet.arc.io",
+  rpcUrl: "https://rpc.blockdaemon.mainnet.arc.io",
   explorerUrl: "https://explorer.arc.io",
   nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
   collateral: {

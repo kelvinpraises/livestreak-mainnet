@@ -44,7 +44,7 @@ export const readDeploymentOutputFromPath = (path: string): EvmDeployOutput => {
 };
 
 // A missing or corrupt snapshot for a SPECIFICALLY requested deployment is fatal-with-instructions
-// (mirrors chains/sui/addresses.ts): silently returning {} handed consumers empty addresses that
+// Silently returning {} handed consumers empty addresses that
 // only failed far downstream (dead-vaultDriver class of bugs).
 const readDeploymentFile = (name: string): EvmDeployOutput => {
   const path = join(deploymentsDir, `${name}.json`);

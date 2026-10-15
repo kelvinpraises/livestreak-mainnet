@@ -3,7 +3,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 import { parseArgs } from 'node:util';
-import { createPublicClient, encodeFunctionData, formatEther, http, keccak256, parseGwei, type Address, type Hex } from 'viem';
+import { encodeFunctionData, formatEther, keccak256, parseGwei, type Abi, type Address, type Hex } from 'viem';
 import { ARC_MAINNET } from '../network.js';
 import { createClients, ensureNickFactory, promoteDeployment, writeState, type ScopeResult } from './utils.js';
 import { deployAA } from './scopes/01-aa.js';
@@ -49,13 +49,13 @@ if (values.estimate) {
     let scope = 'factory';
     const send = walletClient.sendTransaction.bind(walletClient);
     const wrapped = Object.assign({}, walletClient, {
-      async sendTransaction(tx: any) {
+      async sendTransaction(tx: { to: Address; data?: Hex; value?: bigint }) {
         if ((tx.value ?? 0n) !== 0n) throw new Error('The deployment plan must not transfer collateral or fund a paymaster');
         const dump = await publicClient.request({ method: 'anvil_dumpState' as never, params: [] } as never) as Hex;
         let bytes = Buffer.from(dump.slice(2), 'hex');
         if (bytes[0] === 31 && bytes[1] === 139) bytes = gunzipSync(bytes);
-        const state = JSON.parse(bytes.toString());
-        const overrides = Object.fromEntries(Object.entries(state.accounts).map(([address, info]: any) => [address, { nonce: '0x' + info.nonce.toString(16), balance: info.balance, code: info.code, stateDiff: info.storage }]));
+        const state = JSON.parse(bytes.toString()) as { accounts: Record<string, { nonce: number; balance: Hex; code: Hex; storage: Record<Hex, Hex> }> };
+        const overrides = Object.fromEntries(Object.entries(state.accounts).map(([address, info]) => [address, { nonce: '0x' + info.nonce.toString(16), balance: info.balance, code: info.code, stateDiff: info.storage }]));
         const result = await remote.request({ method: 'eth_estimateGas', params: [{ from: account.address, to: tx.to, data: tx.data ?? '0x', value: '0x0' }, '0x' + block.toString(16), overrides] } as never) as Hex;
         const gas = BigInt(result);
         const localGas = await publicClient.estimateGas({ ...tx, account });
@@ -66,7 +66,7 @@ if (values.estimate) {
         log({ scope, transaction: rows.length, estimatedGas: String(gas) });
         return hash;
       },
-      async writeContract(tx: any) {
+      async writeContract(tx: { address: Address; abi: Abi; functionName: string; args?: readonly unknown[]; value?: bigint }) {
         const { address, abi, functionName, args, ...rest } = tx;
         return this.sendTransaction({ ...rest, to: address, data: encodeFunctionData({ abi, functionName, args }) });
       }

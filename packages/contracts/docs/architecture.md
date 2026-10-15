@@ -75,10 +75,8 @@ packages/contracts/
       foundry.toml  wagmi.config.ts
       index.ts            chain export: ABIs + addresses + types
       addresses.ts        flatten deploy/output/*.json
-    sui/index.ts          stub
-    solana/index.ts       stub
   kit/
-    index.ts              export * as evm | sui | solana
+    index.ts              export * as evm
     types.ts              cross-chain types only (ContractChain)
   dist/                   gitignored → dist/{kit,chains}
 ```
