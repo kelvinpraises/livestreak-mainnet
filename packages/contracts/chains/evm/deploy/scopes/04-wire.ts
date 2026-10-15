@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import { join, resolve } from "path";
 import { deployFromArtifact, type ScopeResult } from "../utils.js";
 
-const LABEL = "livestreak";
+const LABEL = "livestreak.arc.mainnet";
 const CONTRACTS_ROOT = resolve(import.meta.dirname, "../..");
 
 const loadAbi = (artifactPath: string): Abi =>
@@ -28,7 +28,7 @@ export async function deployWire(
   }
 
   const { dripsProxy, caller } = streaming.contracts as Record<string, Address>;
-  const { protocol, vault, marketRegistry, mockUsdc, stewardRegistry, lvstToken, treasury } =
+  const { protocol, vault, marketRegistry, usdc, stewardRegistry, lvstToken, treasury } =
     protocolScope.contracts as Record<string, Address>;
   const { deployer } = config;
   const label = config.deploymentLabel ?? LABEL;
@@ -63,7 +63,7 @@ export async function deployWire(
           walletClient,
           client,
           "out/VaultDriver.sol/VaultDriver.json",
-          [protocol, dripsProxy, caller, mockUsdc],
+          [protocol, dripsProxy, caller, usdc],
           undefined,
           `${label}.vaultDriver`
         );
@@ -99,7 +99,7 @@ export async function deployWire(
           walletClient,
           client,
           "out/MarketDriver.sol/MarketDriver.json",
-          [dripsProxy, caller, driverId, protocol, vault, vaultDriver, mockUsdc],
+          [dripsProxy, caller, driverId, protocol, vault, vaultDriver, usdc],
           undefined,
           `${label}.marketDriverLogic`
         )) as Address);
@@ -115,7 +115,7 @@ export async function deployWire(
         walletClient,
         client,
         "out/MarketDriver.sol/MarketDriver.json",
-        [dripsProxy, caller, driverId, protocol, vault, vaultDriver, mockUsdc],
+        [dripsProxy, caller, driverId, protocol, vault, vaultDriver, usdc],
         undefined,
         `${label}.marketDriverLogic`
       );

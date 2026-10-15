@@ -1,16 +1,9 @@
-export const defaultChains = [
-  { name: "localhost", rpc: "http://127.0.0.1:8545" },
-  {
-    name: "monad-testnet",
-    rpc: "https://testnet-rpc.monad.xyz",
-    chainId: 10143,
-    currency: "MON",
-    explorer: "https://testnet.monadexplorer.com"
-  }
-] as const satisfies readonly {
-  name: string;
-  rpc: string;
-  chainId?: number;
-  currency?: string;
-  explorer?: string;
-}[];
+import { ARC_MAINNET } from "../network.js";
+
+export const defaultChains = [{
+  name: ARC_MAINNET.deployment,
+  rpc: ARC_MAINNET.rpcUrl,
+  chainId: ARC_MAINNET.chainId,
+  currency: ARC_MAINNET.nativeCurrency.symbol,
+  explorer: ARC_MAINNET.explorerUrl
+}] as const;

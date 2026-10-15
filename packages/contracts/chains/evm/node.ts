@@ -3,6 +3,5 @@ export {
   addresses as loadAddressesFromDisk,
   loadDeploymentOutput,
   readDeploymentOutputFromPath,
-  localhostDeploymentPath,
   deploymentPath,
 } from "./addresses.js";

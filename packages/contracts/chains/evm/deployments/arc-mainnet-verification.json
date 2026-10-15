@@ -1,0 +1,219 @@
+{
+  "chainId": 5042,
+  "status": "deployment-verified",
+  "deployer": "0x961DF4C09a3305a6782B3Bdc20Eff169ef4Fd71d",
+  "transactions": 33,
+  "deploymentCostUsdc": "0.48156400",
+  "remainingUsdc": "0.128436",
+  "checks": [
+    "all transaction receipts successful",
+    "all listed contracts have code",
+    "eight protocol configuration links match",
+    "protocol owner matches dedicated deployer",
+    "Treasury and both drivers use canonical Arc USDC"
+  ],
+  "limitations": [
+    "No mainnet market funding/resolution/payout run yet",
+    "Public website and Host deployment are pending"
+  ],
+  "receipts": [
+    {
+      "hash": "0xa2459ef089c7a8b53ae6410a5e987283050c7adc83b43f8f5fb2a2a08fde5ff5",
+      "status": "success",
+      "gasUsed": "151812",
+      "feeUsdc": "0.00303624"
+    },
+    {
+      "hash": "0x3a1871a0693b0525ae804331494980307d8a67e4c96bbb3fc71c737504ca3d28",
+      "status": "success",
+      "gasUsed": "179273",
+      "feeUsdc": "0.00358546"
+    },
+    {
+      "hash": "0x46db2420568c9f8827c420a16c1fe046f603da9b5dd18582a4c74d37e3b994e5",
+      "status": "success",
+      "gasUsed": "143972",
+      "feeUsdc": "0.00287944"
+    },
+    {
+      "hash": "0x825f9d4994b97532cf91fad638dcc517c61cc0c0f7c0fa983f441ebec01c873a",
+      "status": "success",
+      "gasUsed": "806058",
+      "feeUsdc": "0.01612116"
+    },
+    {
+      "hash": "0xfe60f2709f7295290073aecef3d2d71e11d13fb8ad6c67b70c464bc065253a5a",
+      "status": "success",
+      "gasUsed": "246274",
+      "feeUsdc": "0.00492548"
+    },
+    {
+      "hash": "0x58f4a02cff16fe81608d470e8202060248f4fad3625df3f7e767c32533aec2db",
+      "status": "success",
+      "gasUsed": "223786",
+      "feeUsdc": "0.00447572"
+    },
+    {
+      "hash": "0x807a40116c7cad63ce82da7ebe5c18c3c64600b99f45c1d1e6ee5259e8ad4dd5",
+      "status": "success",
+      "gasUsed": "233777",
+      "feeUsdc": "0.00467554"
+    },
+    {
+      "hash": "0x8265cf407f1ab8a4b9fbaef7bfc9b57defc487fb75a6759a7e137a3964523056",
+      "status": "success",
+      "gasUsed": "3438917",
+      "feeUsdc": "0.06877834"
+    },
+    {
+      "hash": "0x268755a297e2429cfce65d976770a74703d73f7ff1a9378120caa56ae0e9be30",
+      "status": "success",
+      "gasUsed": "165951",
+      "feeUsdc": "0.00331902"
+    },
+    {
+      "hash": "0x60e61254c33af4227bc9921ae6b963f8e1abe6f61a817a5fdbd4fde7684230d5",
+      "status": "success",
+      "gasUsed": "1267809",
+      "feeUsdc": "0.02535618"
+    },
+    {
+      "hash": "0x7878a1d192aab5585453338b561bc7bff8728e6eda1472c0e386f1f6d61526c5",
+      "status": "success",
+      "gasUsed": "525076",
+      "feeUsdc": "0.01050152"
+    },
+    {
+      "hash": "0x9bbf3daeff0d38b5745f7f3bd8bd825364d440ad88d9670c6914adb0f5b5ae7f",
+      "status": "success",
+      "gasUsed": "1284066",
+      "feeUsdc": "0.02568132"
+    },
+    {
+      "hash": "0xbe827c53e1ea231fb9e082072e17689c0ccdd618381f51aae6e183d0225ca101",
+      "status": "success",
+      "gasUsed": "4208027",
+      "feeUsdc": "0.08416054"
+    },
+    {
+      "hash": "0xa6d9e258f2d1214b0e90e31fc8e82d2c2c734fb4b7a9e40586fabc10cda09eba",
+      "status": "success",
+      "gasUsed": "596082",
+      "feeUsdc": "0.01192164"
+    },
+    {
+      "hash": "0x67aebd3583b9b00bdfb22136de11e15b9ffde8098eeb6a6f4180c7dc6a8d44a5",
+      "status": "success",
+      "gasUsed": "1444267",
+      "feeUsdc": "0.02888534"
+    },
+    {
+      "hash": "0x85e414eeb0ec1bf27e11a86388b771e800ba18633c3a055ca913fc325223289f",
+      "status": "success",
+      "gasUsed": "807003",
+      "feeUsdc": "0.01614006"
+    },
+    {
+      "hash": "0x658449b0724ca56ea70d668d1a6fbdb554ed0b10589b607f72ff41e645cd98d1",
+      "status": "success",
+      "gasUsed": "47175",
+      "feeUsdc": "0.0009435"
+    },
+    {
+      "hash": "0x0257c04fc6bff309262cb47ace2373ee00deec402bcb028511f9e101da85d860",
+      "status": "success",
+      "gasUsed": "2099012",
+      "feeUsdc": "0.04198024"
+    },
+    {
+      "hash": "0xe5483dccb0c0cfaab2f3f26c06b0790228ef58ef44e9cc21c25f8a0a64cb408a",
+      "status": "success",
+      "gasUsed": "82650",
+      "feeUsdc": "0.001653"
+    },
+    {
+      "hash": "0x8a83fafd672010480e823a9fb050296ad82720e291958614984dbcd30cd31499",
+      "status": "success",
+      "gasUsed": "47197",
+      "feeUsdc": "0.00094394"
+    },
+    {
+      "hash": "0x8644834dfdea3d1ba995c06c6abf54b85c90941fe81ab808683ff10a47598877",
+      "status": "success",
+      "gasUsed": "58281",
+      "feeUsdc": "0.00116562"
+    },
+    {
+      "hash": "0xb8a7eafab7e3115dd37932c6d439e7bbce8710b1326c9269824dc9bda66ce0da",
+      "status": "success",
+      "gasUsed": "5283866",
+      "feeUsdc": "0.10567732"
+    },
+    {
+      "hash": "0xdbef76e01758090d3b6f350ac157d9d23d6a54c295801b39dc6f96b5cb632b2b",
+      "status": "success",
+      "gasUsed": "165951",
+      "feeUsdc": "0.00331902"
+    },
+    {
+      "hash": "0x875a629421c2317b5ae501d3a3d2482973f0c7d249cbfce213c1ca57a8b518e2",
+      "status": "success",
+      "gasUsed": "36733",
+      "feeUsdc": "0.00073466"
+    },
+    {
+      "hash": "0xfe1416f9e54a96f5d80b5ccc0211ba35f3da4b76ea728abd37fa37a4c178fa60",
+      "status": "success",
+      "gasUsed": "47153",
+      "feeUsdc": "0.00094306"
+    },
+    {
+      "hash": "0x44d725615031ace377680a523c033897a10a9cab100b597aaff56d8190719ce1",
+      "status": "success",
+      "gasUsed": "47417",
+      "feeUsdc": "0.00094834"
+    },
+    {
+      "hash": "0xda49738f06a76dc3919890da401404f4d0fc6dc552ca12e00fd09eb219b95f28",
+      "status": "success",
+      "gasUsed": "47285",
+      "feeUsdc": "0.0009457"
+    },
+    {
+      "hash": "0x4dcc4741082dbec28fff38909364d3ddad023f92ab48a7e570e895108416e010",
+      "status": "success",
+      "gasUsed": "47461",
+      "feeUsdc": "0.00094922"
+    },
+    {
+      "hash": "0x3dd258aaa1539ede41eb9d163e569cc231261d2e77d45534c9ba286dfab29ace",
+      "status": "success",
+      "gasUsed": "47307",
+      "feeUsdc": "0.00094614"
+    },
+    {
+      "hash": "0xcc7f8bc9309c0fbaa6adacccacf536113895b3ad1c1fefd75f77bf0243c93d63",
+      "status": "success",
+      "gasUsed": "47505",
+      "feeUsdc": "0.0009501"
+    },
+    {
+      "hash": "0x32027f22da84aa473599f0459f06d3bdf11400145e48d3ebb6639cf32e3c1580",
+      "status": "success",
+      "gasUsed": "154434",
+      "feeUsdc": "0.00308868"
+    },
+    {
+      "hash": "0xf3857df4a809e46d9383ad24a8b54413e60b4cf1ce968420a25389622e7615d8",
+      "status": "success",
+      "gasUsed": "47176",
+      "feeUsdc": "0.00094352"
+    },
+    {
+      "hash": "0xc9b746da5fbedc49ada503812601c8f5723698dd6e056c46d5fa420d2e4dffd4",
+      "status": "success",
+      "gasUsed": "49447",
+      "feeUsdc": "0.00098894"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import type { Address, PublicClient, WalletClient } from "viem";
 import { deployFromArtifact, type ScopeResult } from "../utils.js";
 
-const LABEL = "livestreak";
+const LABEL = "livestreak.arc.mainnet";
 const CYCLE_SECS = 10;
 
 export async function deployStreaming(

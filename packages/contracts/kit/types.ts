@@ -1,1 +1,1 @@
-export type ContractChain = "evm" | "sui" | "solana";
+export type ContractChain = "evm";

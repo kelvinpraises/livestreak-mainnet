@@ -23,7 +23,7 @@ const deploymentsDir = join(
   "deployments",
 );
 
-const KNOWN_DEPLOYMENTS = ["localhost", "arbitrum-sepolia", "monad-testnet"] as const satisfies readonly DeploymentName[];
+const KNOWN_DEPLOYMENTS = ["arc-mainnet"] as const satisfies readonly DeploymentName[];
 
 // Parse a snapshot JSON from an explicit path. THE single EVM snapshot parser: both the name-based
 // loader and any host/path override read through this so no consumer hand-rolls its own JSON.parse.
@@ -61,7 +61,7 @@ const loadDeployment = (name: DeploymentName): EvmDeploymentAddresses =>
 
 // The committed localhost snapshot's on-disk path — host uses this as the default snapshot path so
 // there is exactly ONE source of truth for "where the localhost deployment lives".
-export const localhostDeploymentPath = (): string => join(deploymentsDir, "localhost.json");
+
 
 /** Raw deployment snapshot (rpc + full scopes) read fresh from disk — Node consumers that need the
  * un-flattened AA/protocol scopes or rpc read this at runtime so stale compiled .ts can never serve

@@ -1,7 +1,8 @@
-import type { Address, PublicClient, WalletClient } from "viem";
+import { parseAbi, type Address, type PublicClient, type WalletClient } from "viem";
+import { ARC_MAINNET } from "../../network.js";
 import { deployFromArtifact, type ScopeResult } from "../utils.js";
 
-const LABEL = "livestreak";
+const LABEL = "livestreak.arc.mainnet";
 
 export async function deployProtocol(
   client: PublicClient,
@@ -14,6 +15,12 @@ export async function deployProtocol(
   const label = config.deploymentLabel ?? LABEL;
 
   try {
+    if (config.chain !== ARC_MAINNET.deployment || await client.getChainId() !== ARC_MAINNET.chainId) {
+      throw new Error("This edition deploys only to Arc mainnet (5042)");
+    }
+    const usdc = ARC_MAINNET.collateral.address;
+    const decimals = await client.readContract({ address: usdc, abi: parseAbi(["function decimals() view returns (uint8)"]), functionName: "decimals" });
+    if (decimals !== ARC_MAINNET.collateral.decimals) throw new Error("Unexpected Arc USDC decimals");
     const protocol = await deployFromArtifact(
       walletClient,
       client,
@@ -41,15 +48,6 @@ export async function deployProtocol(
       `${label}.vault`
     );
 
-    const mockUsdc = await deployFromArtifact(
-      walletClient,
-      client,
-      "out/MockUSDC.sol/MockUSDC.json",
-      undefined,
-      undefined,
-      `${label}.mockUsdc`
-    );
-
     const lvstToken = await deployFromArtifact(
       walletClient,
       client,
@@ -63,7 +61,7 @@ export async function deployProtocol(
       walletClient,
       client,
       "out/Treasury.sol/Treasury.json",
-      [deployer, mockUsdc, protocol],
+      [deployer, usdc, protocol],
       undefined,
       `${label}.treasury`
     );
@@ -84,7 +82,7 @@ export async function deployProtocol(
         protocol,
         marketRegistry,
         vault,
-        mockUsdc,
+        usdc,
         lvstToken,
         treasury,
         stewardRegistry

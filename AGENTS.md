@@ -4,17 +4,21 @@
 
 - Repository: `kelvinpraises/livestreak-mainnet`; integration branch: `main`.
 - Production target: Arc mainnet, chain ID 5042, real USDC.
-- This checkout is independent from `../flowstream`, the Monad testnet edition.
-- Make Arc changes here. Do not edit or publish the Monad repository as part of this work.
+- This checkout is independent from `../flowstream`, the original testnet edition.
+- Make Arc changes here. Do not edit or publish the original repository as part of this work.
 - Arc testnet may be used for verification; it is not a second production target.
 
 ## Current state
 
-The repository starts from the corrected Monad commit `633564e`. Arc integration
-and mainnet deployment have not been completed. Existing Monad, Arbitrum,
-Solana and Sui artifacts are inherited code, not deployments of this edition.
-Keep README.md and DEPLOYMENT.md honest about what is actually configured,
-deployed and verified. Never invent deployment addresses or successful runs.
+Arc contracts are deployed and verified in
+`packages/contracts/chains/evm/deployments/arc-mainnet.json`. The accompanying
+verification JSON records 33 successful transactions, ownership, wiring and real
+USDC collateral checks. Deployment cost: 0.481564 USDC; deployer balance afterward:
+0.128436 USDC. Do not redeploy these contracts or spend the balance on market
+stakes as part of cleanup. A real-money market lifecycle has not been verified.
+
+Application migration and cleanup are still in progress. Never present incomplete
+application integration, hosting or market lifecycle tests as completed.
 
 ## Asset and environment boundaries
 
@@ -25,7 +29,7 @@ deployed and verified. Never invent deployment addresses or successful runs.
 - Review native transfers, gas reserves, sponsorship and balance sweeps for
   their effect on real USDC. Filter transfer logs by emitter to avoid duplicates.
 - Never copy private `.env`, operator wallets, deployment keys or populated
-  databases from the Monad edition. Use dedicated database and media storage.
+  databases from the original edition. Use dedicated database and media storage.
 - Keep build outputs, node_modules, recordings and secrets out of Git.
 
 ## Publishing

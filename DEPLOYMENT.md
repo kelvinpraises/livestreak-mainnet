@@ -1,14 +1,14 @@
 # Arc mainnet deployment
 
-`main` in this repository is dedicated to **Arc mainnet (5042)**. The Monad
-testnet edition is maintained separately in `kelvinpraises/livestreak`.
+`main` in this repository is dedicated to **Arc mainnet (5042)**. This checkout is independent from the earlier testnet edition.
 
 ## Current status
 
 - Separate local checkout and GitHub remote are configured.
-- No LiveStreak contracts have been deployed to Arc by this repository.
-- The copied application, SDK and Host still contain Monad defaults. The existing
-  deployment snapshots must not be used as Arc deployments.
+- Arc contracts are deployed. All 33 transactions succeeded; ownership, wiring
+  and canonical USDC collateral were verified. Cost: 0.481564 USDC.
+- The canonical Arc deployment snapshot is in the contracts package. Application
+  cleanup and integration are in progress; do not publish the app until verified.
 - No AWS server is currently available. Run the Host on the operator's laptop
   during development; public access still requires HTTPS/WSS connectivity.
 - The application target is **https://livestreak-mainnet.vercel.app**, using a
@@ -28,7 +28,7 @@ testnet edition is maintained separately in `kelvinpraises/livestreak`.
 4. Configure and verify Arc wallet infrastructure and sponsored operations.
    Network support alone is not proof that our exact wallet configuration works.
 5. Use a dedicated Turso database and media bucket. Set the catalog deployment
-   scope to the real Arc contracts; do not import Monad test records.
+   scope to the real Arc contracts; do not import testnet records.
 6. Verify the lifecycle with small amounts on Arc testnet first, then deploy and
    run a small complete mainnet market: publish stream and rules, fund both sides,
    reject late funding, resolve, verify winner USDC balance changes and losing
@@ -45,7 +45,7 @@ Start from [host/.env.example](host/.env.example), using new mainnet credentials
 The example contains placeholders; it is not a working deployment snapshot.
 Provide dedicated database/storage credentials, Arc RPC and wallet-provider
 endpoints, and a verified Arc deployment snapshot before enabling indexing and
-transactions. Do not reuse a Monad snapshot or `.env`.
+transactions. Do not reuse a testnet snapshot or `.env`.
 
 For local development, use Node 22 and run the Host and app separately after the
 Arc runtime configuration is implemented:
@@ -55,7 +55,7 @@ npm run dev --workspace=@livestreak/host-server
 npm run dev --workspace=app
 ```
 
-The Host defaults to port 8787 and the frontend to port 3000. Set
+The Host defaults to port 8788 and the frontend development server to port 3001. Set
 `VITE_HOST_BASE_URL` to the intended Host. For public access, configure a stable
 HTTPS/WSS endpoint, the exact app origin, persistent private gateway-grant keys
 and storage playback CORS. A laptop Host requires the laptop to remain online.
@@ -81,5 +81,5 @@ CI still runs on pull requests and pushes to `main`.
 Dedicated Arc mainnet deployer: `0x961DF4C09a3305a6782B3Bdc20Eff169ef4Fd71d`.
 Fund this address with native USDC on **Arc mainnet (5042)** only. Its private
 key is stored in this checkout's ignored, owner-readable `.env`; it is not
-committed or shared with the Monad edition. Deployment gas is separate from
+committed or shared with the original edition. Deployment gas is separate from
 market collateral and ongoing sponsorship.

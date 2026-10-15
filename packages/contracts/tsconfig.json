@@ -4,13 +4,14 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "kit/**/*.ts",
     "chains/evm/**/*.ts",
-    "chains/sui/**/*.ts",
-    "chains/solana/**/*.ts"
+    "chains/evm/deployments/arc-mainnet.ts"
   ],
   "exclude": [
     "chains/evm/lib/**",
