@@ -13,32 +13,13 @@ import {
 
 // Regression: the instant catalog ingest (POST /catalog/markets) must tag the market with the SAME chain
 // the register used — wallet.walletInit.chain — NOT the top-level sessionInit.chain, which is a separate
-// CAIP-2 field that can diverge (a solana market was once tagged "evm" and never synced into the catalog).
+// CAIP-2 field that can diverge from the wallet configuration.
 // Each case sets sessionInit.chain to a DELIBERATELY WRONG value to prove the tag ignores it.
-const CASES: ReadonlyArray<{
-  chain: "evm" | "sui" | "solana";
-  wrongTopLevel: string;
-  contracts: Record<string, string>;
-}> = [
-  {
-    chain: "evm" as const,
-    wrongTopLevel: "solana:localnet",
-    contracts: { marketRegistry: "0x00000000000000000000000000000000000000aa" }
-  },
-  {
-    chain: "sui" as const,
-    wrongTopLevel: "eip155:1",
-    contracts: { marketRegistry: "0x00000000000000000000000000000000000000aa" }
-  },
-  {
-    chain: "solana" as const,
-    wrongTopLevel: "eip155:31337",
-    contracts: { solanaMarketRegistry: JSON.stringify({ programId: "Prog", usdcMint: "Usdc" }) }
-  }
-];
+const CASES = [{ chain: "evm" as const, wrongTopLevel: "eip155:1",
+  contracts: { marketRegistry: "0x00000000000000000000000000000000000000aa" } }];
 
 const registerOn = (
-  chain: "evm" | "sui" | "solana",
+  chain: "evm",
   wrongTopLevel: string,
   contracts: Record<string, string>
 ) =>

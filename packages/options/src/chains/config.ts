@@ -5,8 +5,6 @@ import { LiveStreakConfigError } from "@livestreak/core";
 import { asUserAddress } from "../model/ids.js";
 import type { OptionsChainConfig } from "./types.js";
 import { validateOptionsContractAddresses } from "./evm/addresses.js";
-import { validateOptionsSuiObjectIds } from "./sui/addresses.js";
-import { validateOptionsSolanaAddresses } from "./solana/addresses.js";
 
 export const validateOptionsChainConfig = (input: unknown): OptionsChainConfig => {
   if (!isPlainObject(input)) {
@@ -39,13 +37,8 @@ export const validateOptionsChainConfig = (input: unknown): OptionsChainConfig =
     });
   }
 
-  const chain = (walletInit as { chain?: string }).chain;
-  const addresses =
-    chain === "sui"
-      ? validateOptionsSuiObjectIds(input.addresses as unknown as import("./sui/addresses.js").OptionsSuiObjectIds)
-      : chain === "solana"
-        ? validateOptionsSolanaAddresses(input.addresses as unknown as import("./solana/addresses.js").OptionsSolanaAddresses)
-        : validateOptionsContractAddresses(input.addresses as unknown as import("./evm/addresses.js").OptionsContractAddresses);
+  if (walletInit.chain !== "evm") throw new LiveStreakConfigError({ message: "Only Arc EVM wallets are supported" });
+  const addresses = validateOptionsContractAddresses(input.addresses as unknown as import("./evm/addresses.js").OptionsContractAddresses);
 
   const readRpcUrl =
     input.readRpcUrl === undefined

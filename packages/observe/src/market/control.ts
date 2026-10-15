@@ -223,9 +223,7 @@ const registerCall = (
     );
 
     if (result.status === "registered" && deps.sessionInit !== undefined) {
-      // Tag the catalog with the SAME chain the register used (registration.walletInit.chain) — the
-      // one source of truth. (Previously derived from sessionInit.chain, a separate CAIP-2 field that
-      // could diverge: a solana market got tagged evm and never synced into the catalog.)
+      // Use the registration wallet kind for the catalog tag.
       yield* notifyCatalogFailOpen(deps.sessionInit, result.marketId, registration.walletInit.chain);
     }
 
@@ -237,7 +235,7 @@ const registerCall = (
 const notifyCatalogFailOpen = (
   sessionInit: PackageRuntimeInit,
   marketId: string,
-  chain: "evm" | "sui" | "solana"
+  chain: "evm"
 ): Effect.Effect<void> =>
   Effect.tryPromise(async () => {
     const base = sessionInit.hostUrl.replace(/\/$/, "");
@@ -343,49 +341,15 @@ const buildMarketConfig = (
       );
     }
 
-    // The registry ADDRESS is an EVM/Sui concept; on Solana every registry account is a PDA
-    // derived from the programId carried by contracts.solanaMarketRegistry below.
-    const chain = wallet.walletInit.chain;
     const marketRegistryAddress = deps.sessionInit?.contracts?.marketRegistry;
-    if (
-      chain !== "solana" &&
-      (typeof marketRegistryAddress !== "string" || !marketRegistryAddress.startsWith("0x"))
-    ) {
-      return yield* Effect.fail(
-        new LiveStreakConfigError({
-          message: "market controls require contracts.marketRegistry in runtime init"
-        })
-      );
+    if (typeof marketRegistryAddress !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(marketRegistryAddress)) {
+      return yield* Effect.fail(new LiveStreakConfigError({ message: "market controls require contracts.marketRegistry in runtime init" }));
     }
-    if (chain === "solana" && deps.sessionInit?.contracts?.solanaMarketRegistry === undefined) {
-      return yield* Effect.fail(
-        new LiveStreakConfigError({
-          message: "market controls require contracts.solanaMarketRegistry in runtime init"
-        })
-      );
-    }
-
     return {
       walletInit: wallet.walletInit,
       seed: wallet.seed,
-      ...(typeof marketRegistryAddress === "string" && marketRegistryAddress.startsWith("0x")
-        ? { marketRegistryAddress: marketRegistryAddress as ObserveRunMarketConfig["marketRegistryAddress"] }
-        : {}),
-      title,
-      ...(deps.sessionInit?.contracts?.suiMarketRegistry === undefined
-        ? {}
-        : {
-            suiRegistry: JSON.parse(deps.sessionInit.contracts.suiMarketRegistry) as NonNullable<
-              ObserveRunMarketConfig["suiRegistry"]
-            >
-          }),
-      ...(deps.sessionInit?.contracts?.solanaMarketRegistry === undefined
-        ? {}
-        : {
-            solanaRegistry: JSON.parse(deps.sessionInit.contracts.solanaMarketRegistry) as NonNullable<
-              ObserveRunMarketConfig["solanaRegistry"]
-            >
-          })
+      marketRegistryAddress: marketRegistryAddress as NonNullable<ObserveRunMarketConfig["marketRegistryAddress"]>,
+      title
     };
   });
 

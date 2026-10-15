@@ -5,8 +5,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   asMarketId,
-  asTokenId,
-  asVaultId,
   type OptionsStreamState
 } from "../src/model/index.js";
 import { readMarketSnapshot, readUserOptionsSnapshot } from "../src/flows/snapshot.js";
@@ -42,7 +40,7 @@ describe("OptionsNftPanel — balanceUSDC + runwayEndMs (Part A)", () => {
     expect(panel.nfts[0]?.account.endsAtMs).toBe(1_800_000_000_000);
   });
 
-  it("omits balanceUSDC and runwayEndMs when nft.balance is absent (Sui graceful path)", async () => {
+  it("omits balanceUSDC and runwayEndMs when nft.balance is absent (incomplete snapshot)", async () => {
     const user = fixtureUser();
     const nft = fixtureNft(user); // no balance / runwayEndMs
     const reader = createFakeOptionsReader({
@@ -68,7 +66,7 @@ describe("OptionsNftPanel — balanceUSDC + runwayEndMs (Part A)", () => {
 
     expect(panel.nfts[0]?.account.balanceUSDC).toBe(1);
     // A funded, streaming position gets a computed runway (was RUNWAY "—" before the fallback) — now +
-    // balance ÷ drain-rate — instead of being dropped just because the reader (Solana) didn't supply one.
+    // balance ÷ drain-rate — instead of being dropped just because the reader didn't supply one.
     expect(panel.nfts[0]?.account.endsAtMs).toBeGreaterThan(1_700_000_000_000);
   });
 
@@ -115,7 +113,6 @@ describe("OptionsMarketPanel.stream (Part B)", () => {
         market_01: fixtureStreamState("live")
       }
     });
-    const snapshot = await readMarketSnapshot(reader, asMarketId("market_01"));
     const userSnapshot = await readUserOptionsSnapshot(
       reader,
       fixtureUser(),
@@ -131,8 +128,8 @@ describe("OptionsMarketPanel.stream (Part B)", () => {
 
   it("an unset stream pointer is an explicit none state", async () => {
     const reader = createFakeOptionsReader(fixtureSeed());
-    const snapshot = await readMarketSnapshot(reader, asMarketId("market_01"));
 
+    const snapshot = await readMarketSnapshot(reader, asMarketId("market_01"));
     expect(snapshot.streamState?.status).toBe("none");
 
     const userSnapshot = await readUserOptionsSnapshot(
@@ -151,8 +148,8 @@ describe("OptionsMarketPanel.stream (Part B)", () => {
         market_01: fixtureStreamState("ended")
       }
     });
-    const snapshot = await readMarketSnapshot(reader, asMarketId("market_01"));
 
+    const snapshot = await readMarketSnapshot(reader, asMarketId("market_01"));
     expect(snapshot.streamState?.status).toBe("ended");
     expect(snapshot.streamState?.endedAtMs).toBe(1_700_001_000_000);
 

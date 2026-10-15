@@ -9,7 +9,7 @@ import type { StewardActionPlanSink } from "../sink.js";
 // --- Action-plan sink (WAVE 5 BUILD) — the egress that executes governance ---
 //
 // Contract calls (triggerHot/resolve/proposePenalty/…) are signed + submitted via `@livestreak/wallet`
-// (the sole SDK owner — Sui never pins `@mysten/sui`); host actions (openThread/appendMessage/annotate)
+// for Arc; host actions (openThread/appendMessage/annotate)
 // go through the `@livestreak/host` forum client. Both are injected by the executor; this sink only routes
 // each plan's calls to the right executor method and reports what it dispatched.
 

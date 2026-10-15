@@ -71,7 +71,7 @@ const validateLifecycleInput = (
 export const createEvmMarketRegistrar = (
   config: ObserveRunMarketConfig
 ): MarketRegistrar => {
-  // The registry ref is optional on the shared config (absent on Solana) but load-bearing here.
+  // The registry ref is required for Arc market registration.
   const marketRegistryAddress = config.marketRegistryAddress;
   if (marketRegistryAddress === undefined) {
     throw new LiveStreakConfigError({

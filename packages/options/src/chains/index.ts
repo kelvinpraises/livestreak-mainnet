@@ -1,23 +1,13 @@
 // --- exports ---
 
-import { LiveStreakConfigError } from "@livestreak/core";
-import type { WalletInit } from "@livestreak/schema";
 
 import type { UserAddress } from "../model/ids.js";
 import { validateOptionsChainConfig } from "./config.js";
 import { resolveEvmAccountAddress } from "./evm/account.js";
 import { createEvmOptionsChain } from "./evm/index.js";
-import { createSuiOptionsChain } from "./sui/index.js";
-import { resolveSuiAccountAddress } from "./sui/account.js";
-import { createSolanaOptionsChain } from "./solana/index.js";
-import { resolveSolanaAccountAddress } from "./solana/account.js";
 import type { OptionsChain, OptionsChainConfig } from "./types.js";
 
 export type { OptionsContractAddresses } from "./evm/addresses.js";
-export type { OptionsSuiObjectIds } from "./sui/addresses.js";
-export type { OptionsSolanaAddresses } from "./solana/addresses.js";
-export { validateOptionsSuiObjectIds } from "./sui/addresses.js";
-export { validateOptionsSolanaAddresses } from "./solana/addresses.js";
 export { validateOptionsChainConfig } from "./config.js";
 export type {
   ApproveNftInput,
@@ -47,50 +37,9 @@ export { asTxId } from "./types.js";
 
 export const createOptionsChain = (config: OptionsChainConfig): OptionsChain => {
   const validated = validateOptionsChainConfig(config);
-  const walletInit = validated.walletInit;
-
-  switch (walletInit.chain) {
-    case "evm": {
-      return createEvmOptionsChain({ ...validated, walletInit });
-    }
-    case "sui": {
-      return createSuiOptionsChain({ ...validated, walletInit });
-    }
-    case "solana": {
-      return createSolanaOptionsChain({ ...validated, walletInit });
-    }
-    default: {
-      return unreachableChain(walletInit);
-    }
-  }
+  return createEvmOptionsChain(validated);
 };
 
-export const resolveOptionsAccountAddress = async (
-  config: OptionsChainConfig
-): Promise<UserAddress> => {
-  const validated = validateOptionsChainConfig(config);
-  const walletInit = validated.walletInit;
-
-  switch (walletInit.chain) {
-    case "evm": {
-      return resolveEvmAccountAddress({ ...validated, walletInit });
-    }
-    case "sui": {
-      return resolveSuiAccountAddress({ ...validated, walletInit });
-    }
-    case "solana": {
-      return resolveSolanaAccountAddress({ ...validated, walletInit });
-    }
-    default: {
-      return unreachableChain(walletInit);
-    }
-  }
-};
-
-// --- helpers ---
-
-const unreachableChain = (walletInit: WalletInit): never => {
-  throw new LiveStreakConfigError({
-    message: `Unsupported wallet chain for options: ${String(walletInit.chain)}`
-  });
+export const resolveOptionsAccountAddress = async (config: OptionsChainConfig): Promise<UserAddress> => {
+  return resolveEvmAccountAddress(validateOptionsChainConfig(config));
 };

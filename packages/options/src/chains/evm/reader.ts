@@ -552,7 +552,7 @@ const readLossClaimable = async (
   try {
     // The EARNED LVST for this loss = Vault.lossClaimable(USDC basis) × Treasury.mintRate / USDC_ONE
     // (the same figure the on-chain claim mints). Shown even after claiming; the claimed STATE is a
-    // separate flag (readLossClaimed / readNft) so the row can say "claimed". Sui/Solana use the same
+    // separate flag (readLossClaimed / readNft) so the row can say "claimed". Consumers use the same
     // shared lossBasisToLvst helper for parity.
     const [basis, mintRate] = await Promise.all([
       call<bigint>(ctx, ctx.addresses.vault, ctx.abis.Vault, "lossClaimable", [id, vaultBytes, sideVal]),
@@ -730,7 +730,7 @@ const readNft = async (
         vault = await readVault(ctx, vaultId);
         vaultByVaultId.set(vaultId, vault);
       }
-      // Winning side from the vault's resolved outcome (parity with the Solana reader — no separate
+      // Winning side from the vault's resolved outcome (no separate
       // winningSide() call), and resolvedAt for the overstream (USDC that streamed past resolution).
       const winningSide: OptionsVaultSide | undefined =
         vault.outcome === "yes" ? "yes" : vault.outcome === "no" ? "no" : undefined;

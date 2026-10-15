@@ -11,7 +11,6 @@ import {
   observeRunStreamId
 } from "#market/chains/evm.js";
 import { createEvmMarketRegistrar } from "#market/chains/evm.js";
-import { createMarketRegistrar } from "#market/chains/index.js";
 import { validateMarketRunId } from "#market/validate.js";
 import type { ObserveRunMarketConfig } from "#market/types.js";
 
@@ -172,59 +171,9 @@ describe("market chain seam", () => {
     }
   });
 
-  it("Sui registrar fails clearly when the deployed registry id is not configured", async () => {
-    const config: ObserveRunMarketConfig = {
-      walletInit: {
-        chain: "sui",
-        seedSource: "raw",
-        config: { rpcUrl: "https://example.invalid" }
-      },
-      seed: "test-seed",
-      marketRegistryAddress: "0x0000000000000000000000000000000000000001",
-      title: "Sui stream"
-    };
 
-    const registrar = await Effect.runPromise(createMarketRegistrar(config));
-    const exit = await Effect.runPromiseExit(
-      registrar.registerMarket({
-        runId: "run_sui",
-        title: config.title
-      })
-    );
 
-    expect(Exit.isFailure(exit)).toBe(true);
-    if (Exit.isFailure(exit)) {
-      // O4: Sui registrar is now wired to the real Move contract; it resolves the
-      // deployed registry object id from config (never a constant) and fails
-      // clearly when that deployment input is absent.
-      expect(String(exit.cause)).toContain("suiRegistry");
-    }
-  });
 
-  it("requires the deployed solana program id from config (never a constant)", async () => {
-    const config: ObserveRunMarketConfig = {
-      walletInit: {
-        chain: "solana",
-        seedSource: "raw",
-        config: { provider: "http://127.0.0.1:8899" }
-      } as never,
-      seed: "test-seed",
-      marketRegistryAddress: "0x0000000000000000000000000000000000000001",
-      title: "Solana stream"
-    };
-
-    const registrar = await Effect.runPromise(createMarketRegistrar(config));
-    const exit = await Effect.runPromiseExit(
-      registrar.registerMarket({ runId: "run_solana", title: config.title })
-    );
-
-    expect(Exit.isFailure(exit)).toBe(true);
-    if (Exit.isFailure(exit)) {
-      // O4: Solana registrar is wired to the real Anchor program; it resolves the
-      // deployed program id from config and fails clearly when it is absent.
-      expect(String(exit.cause)).toContain("solanaRegistry");
-    }
-  });
 
   it("EVM goLive/setEnded encode the marketRegistry calldata and poll inclusion", async () => {
     const registrar = createEvmMarketRegistrar(minimalEvmConfig());

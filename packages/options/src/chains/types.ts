@@ -16,8 +16,6 @@ import type {
   OptionsVaultSide,
 } from "../model/vault.js";
 import type { OptionsContractAddresses } from "./evm/addresses.js";
-import type { OptionsSuiObjectIds } from "./sui/addresses.js";
-import type { OptionsSolanaAddresses } from "./solana/addresses.js";
 
 export type TxId = string & { readonly __brand: "TxId" };
 
@@ -141,10 +139,7 @@ export interface OptionsReader {
   }>;
   readMarket(marketId: MarketId): Promise<OptionsMarket>;
   readStreamState(marketId: MarketId): Promise<OptionsStreamState>;
-  // Enumerate every registered market off the on-chain registry. The host indexer uses this
-  // to discover markets without an in-memory store or env seed. EVM (marketCount/marketIdAt)
-  // and Sui (market_count/market_id_at) both implement it; optional only for chains whose
-  // contracts are not deployed yet (solana) — the host falls back to the discovery store there.
+  // Enumerate the Arc registry for Host discovery.
   listMarketIds?(): Promise<readonly MarketId[]>;
   listMarketVaults(marketId: MarketId): Promise<readonly VaultId[]>;
   readVault(vaultId: VaultId): Promise<OptionsVault>;
@@ -218,15 +213,12 @@ export type OptionsChain = {
   readonly writer: OptionsWriter;
 };
 
-export type ContractChain = "evm" | "sui" | "solana";
+export type ContractChain = "evm";
 
 export type OptionsChainConfig = {
   readonly walletInit: WalletInit;
   readonly seed: string | Uint8Array;
-  readonly addresses:
-    | OptionsContractAddresses
-    | OptionsSuiObjectIds
-    | OptionsSolanaAddresses;
+  readonly addresses: OptionsContractAddresses;
   readonly hostUrl?: string;
   /** Persist the submission identity before receipt polling; callers can recover after reload. */
   readonly onTransactionSubmitting?: (action?: string) => void;

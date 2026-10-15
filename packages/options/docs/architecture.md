@@ -25,7 +25,6 @@ Side enum on-chain: `yes = 0`, `no = 1`.
 ```text
 chains/           protocol operations (OptionsReader / OptionsWriter, per-chain)
   evm/            abis · addresses · encode · decode · reader · writer
-  sui/            notImplemented stub (drops in when contracts exist)
 model/            pure domain types + model/math/ + model/validate.ts
 flows/            snapshot · claims · pnl · stream orchestration over chain.reader
 bridge/           authorized outward edge (readBoard / readControls / callAction / subscribe / watch)
@@ -37,7 +36,7 @@ Dependency order: `chains` → `model` → `flows` → `runtime` / `bridge`.
 
 ```text
 app / CLI
-  ├── createOptionsChain(chainConfig)     → chains/{evm|sui}
+  ├── createOptionsChain(chainConfig)     → chains/evm
   │     EVM reads:  viem publicClient (RPC from config)
   │     EVM writes: createWalletManager → AA userOp → poll receipt → TxId
   ├── createOptionsRuntime({ config, chainConfig })

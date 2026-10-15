@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { validateBookmakerChainConfig } from "../../src/chains/config.js";
-import { createBookmakerChain } from "../../src/chains/index.js";
 
 const validConfig = {
   walletInit: {
@@ -44,61 +43,9 @@ describe("validateBookmakerChainConfig", () => {
     ).toThrow();
   });
 
-  it("validates a solana config (programId + usdcMint base58)", () => {
-    const validated = validateBookmakerChainConfig({
-      ...validConfig,
-      walletInit: { chain: "solana", seedSource: "raw", config: { rpcUrl: "http://x" } },
-      addresses: {
-        programId: "CZnAfgbnbVtuXDRQynwL9XMHqeQ7wngbodRihGLbErK8",
-        usdcMint: "Cuzvn5YeJ2Wdn6gVsybkKvyDgMJFjBWNxZyGiZmAnB7Z"
-      }
-    });
-    expect(validated.addresses).toMatchObject({
-      programId: "CZnAfgbnbVtuXDRQynwL9XMHqeQ7wngbodRihGLbErK8",
-      usdcMint: "Cuzvn5YeJ2Wdn6gVsybkKvyDgMJFjBWNxZyGiZmAnB7Z"
-    });
-  });
-
-  it("rejects a solana config with a malformed pubkey", () => {
-    expect(() =>
-      validateBookmakerChainConfig({
-        ...validConfig,
-        walletInit: { chain: "solana", seedSource: "raw", config: { rpcUrl: "http://x" } },
-        addresses: { programId: "not-base58!", usdcMint: "also-bad" }
-      })
-    ).toThrow(/Invalid Solana address/);
-  });
-});
-
-const validSuiAddresses = {
-  packageId: `0x${"ab".repeat(32)}`,
-  vaultDriverRegistry: `0x${"01".repeat(32)}`,
-  vaultRegistry: `0x${"02".repeat(32)}`,
-  marketRegistry: `0x${"03".repeat(32)}`,
-  dripsRegistry: `0x${"04".repeat(32)}`,
-  streamsRegistry: `0x${"05".repeat(32)}`
-} as const;
-
-describe("createBookmakerChain sui", () => {
-  it("builds a sui chain (reader + writer) from valid object ids", () => {
-    const chain = createBookmakerChain({
-      walletInit: { chain: "sui", seedSource: "raw", config: { rpcUrl: "http://127.0.0.1:9000" } },
-      seed: "test-seed",
-      addresses: validSuiAddresses
-    });
-
-    expect(typeof chain.writer.createVault).toBe("function");
-    expect(typeof chain.reader.marketExists).toBe("function");
-  });
-
-  it("rejects evm-shaped addresses for a sui chain", () => {
-    expect(() =>
-      createBookmakerChain({
-        walletInit: { chain: "sui", seedSource: "raw", config: { rpcUrl: "http://127.0.0.1:9000" } },
-        seed: "test-seed",
-        // EVM 0x+40-hex addresses are not valid Sui object ids (0x + 64 hex).
-        addresses: validConfig.addresses
-      })
-    ).toThrow(/Sui object id/i);
+  it("rejects unsupported wallet kinds", () => {
+    expect(() => validateBookmakerChainConfig({ ...validConfig,
+      walletInit: { chain: "unsupported" }
+    })).toThrow("Only Arc EVM wallets are supported");
   });
 });

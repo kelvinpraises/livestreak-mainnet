@@ -121,7 +121,6 @@ export {
 export type {
   StewardChainConfig,
   StewardEvmAddresses,
-  StewardSuiObjectIds,
 } from "./chains/index.js";
 export * from "./workflow/resolution/evaluate.js";
 export * from "./runtime/resolution/controller.js";

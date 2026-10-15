@@ -120,7 +120,7 @@ class OptionsRuntimeFacade implements OptionsRuntime {
   private pausedLaneRegistry: OptionsPausedLane[];
   // The token's full lane set from the runtime's OWN last setLanes write. setLanes is FULL-REPLACEMENT,
   // so `desired` must carry every lane the token still holds — rebuilding it from the polled snapshot
-  // drops a sibling lane funded moments ago whose read hasn't landed yet (Solana read-after-write lag),
+  // drops a sibling lane funded moments ago whose read hasn't landed yet (RPC read-after-write lag),
   // silently capping the NFT at one vault. This overlay is the authoritative lane set until a confirmed
   // read catches up (reconciled in refreshUser), so a second/third vault never wipes the first.
   // Session-only (a reload re-reads the chain); keyed by tokenId string.
@@ -341,7 +341,7 @@ class OptionsRuntimeFacade implements OptionsRuntime {
       });
     }
     // Re-assert the token's CURRENT full lane set (overlay-aware) with the deposit as add_deposit. setLanes
-    // is full-replacement, so building this from a snapshot that lags a just-funded lane (Solana
+    // is full-replacement, so building this from a snapshot that lags a just-funded lane (RPC
     // read-after-write) would drop it — the overlay is what makes addFunds safe on every chain. A laneless
     // mint re-asserts [] and just parks the deposit as budget (the first-bet top-up).
     const desired = this.currentLaneWrites(entry.nft);
@@ -394,7 +394,7 @@ class OptionsRuntimeFacade implements OptionsRuntime {
   }
 
   // The token's current full lane set for a setLanes rebuild: the runtime's OWN last write when the
-  // polled snapshot hasn't caught up to it yet (Solana read-after-write lag), else the on-chain lanes.
+  // polled snapshot hasn't caught up to it yet (RPC read-after-write lag), else the on-chain lanes.
   // This is what stops a second/third vault fund from wiping the first via full-replacement setLanes.
   //
   // Lanes whose vault reached a TERMINAL state (resolved/disputed) are dropped from the rebuild: once

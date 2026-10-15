@@ -7,10 +7,10 @@ import { Schema } from "effect";
 // the app's `app/src/types/host-edge.ts` (HostStreamSummary/Detail/Catalog) + the
 // `Homepage*Raw` / `Agent` shapes in `app/src/types/demo.ts`, MOVED here so the app can
 // drop its local copies and import `@livestreak/host` instead. Every stream/vault item
-// additionally carries a `chain` tag (`evm`|`sui`); the app ignores unknown fields, so
+// additionally carries a `chain` tag (`evm`); the app ignores unknown fields, so
 // the tag is a non-breaking superset of the app's current shapes.
 
-export const CatalogChain = Schema.Literal("evm", "sui", "solana");
+export const CatalogChain = Schema.Literal("evm");
 export type CatalogChain = Schema.Schema.Type<typeof CatalogChain>;
 
 // app/src/types/host-edge.ts -> HostStreamSummary (+ chain tag).

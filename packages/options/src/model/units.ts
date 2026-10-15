@@ -4,9 +4,9 @@ import type { ContractChain } from "../chains/types.js";
 import { SHARE_SCALE } from "./math/curve.js";
 
 // USDC and protocol shares are 6-decimal on every chain. LVST decimals are chain-LOCAL (contracts D2):
-// EVM = 18, Sui/Solana = 9. The board normalizes with these so no consumer carries a decimals table.
+// Arc = 18. The board normalizes with these so no consumer carries a decimals table.
 const USDC_SCALE = 1_000_000;
-const LVST_DECIMALS: Record<ContractChain, number> = { evm: 18, sui: 9, solana: 9 };
+const LVST_DECIMALS: Record<ContractChain, number> = { evm: 18 };
 
 export const lvstDecimalsForChain = (chain: ContractChain): number => LVST_DECIMALS[chain];
 
@@ -14,8 +14,7 @@ export const lvstDecimalsForChain = (chain: ContractChain): number => LVST_DECIM
 export const USDC_ONE_UNITS = 1_000_000n;
 
 /** USDC loss basis → LVST base units, via the protocol's cumulative-pot mint rate: (basis × mintRate) /
- *  USDC_ONE. Every chain's Treasury mints losses by this exact formula (EVM Treasury._mintLoss, Sui
- *  mint_loss_lvst, Solana treasury.rs), so each reader converts the vault's raw USDC loss to LVST HERE —
+ *  USDC_ONE. Treasury._mintLoss uses this formula, so the reader converts the vault's raw USDC loss to LVST HERE —
  *  the panel then scales by the chain's LVST decimals. Keeps the loss preview equal to what claim mints. */
 export const lossBasisToLvst = (basisUsdc: bigint, mintRate: bigint): bigint =>
   (basisUsdc * mintRate) / USDC_ONE_UNITS;

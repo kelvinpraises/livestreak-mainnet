@@ -202,7 +202,7 @@ export const runConfigFromBoard = (
         // the host `/live/watch/:streamId` endpoint).
         config: {
           streamId: marketId,
-          transport: createHostFmp4IngestTransport({ baseUrl: hostBaseUrl, streamId: marketId, runId: `${runId}#${obsId}`, chain: String(index[obsId]?.chain ?? "").startsWith("eip155:") ? "evm" : String(index[obsId]?.chain ?? "").startsWith("solana:") ? "solana" : "sui", ...(input.hostApiToken ? { accessToken: input.hostApiToken } : {}) })
+          transport: createHostFmp4IngestTransport({ baseUrl: hostBaseUrl, streamId: marketId, runId: `${runId}#${obsId}`, chain: "evm", ...(input.hostApiToken ? { accessToken: input.hostApiToken } : {}) })
         }
       },
       process: null

@@ -31,7 +31,7 @@ export const ContentDescriptorAdvert = Schema.Struct({
 export type ContentDescriptorAdvert = Schema.Schema.Type<typeof ContentDescriptorAdvert>;
 
 export interface RecordingScope {
-  readonly chain: "evm" | "solana" | "sui";
+  readonly chain: "evm";
   readonly marketId: string;
   readonly runId: string;
 }

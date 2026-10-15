@@ -396,7 +396,7 @@ packages/bookmaker/src/
 
   chains/
     evm/                reader, writer, encode, create-vault-recovery
-    sui/                stub
+    evm/                Arc reader and writer
     index.ts
 
   flows/

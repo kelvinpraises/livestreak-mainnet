@@ -2,16 +2,12 @@
 
 import { LiveStreakConfigError } from "@livestreak/core";
 
-import type {
-  BookmakerContractAddresses,
-  BookmakerSolanaAddresses,
-  BookmakerSuiObjectIds
-} from "../addresses.js";
+import type { BookmakerContractAddresses } from "../addresses.js";
 
 const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
 
 export const validateBookmakerContractAddresses = (
-  input: BookmakerContractAddresses | BookmakerSuiObjectIds | BookmakerSolanaAddresses
+  input: BookmakerContractAddresses
 ): {
   readonly vaultDriver: `0x${string}`;
   readonly marketRegistry: `0x${string}`;

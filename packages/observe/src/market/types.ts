@@ -8,12 +8,7 @@ export type MarketLifecycleStatus =
   | "ended"
   | "failed";
 
-/**
- * On-chain StorageScheme enum, byte-identical across EVM (`StorageScheme`) and
- * Sui (`SCHEME_*`): 0=WalrusTestnet, 1=WalrusMainnet, 2=Ipfs, 3=Arweave. observe
- * accepts the NUMERIC scheme — the host's `PointerScheme` → number mapping stays
- * at the CLI edge (observe never imports `@livestreak/host`).
- */
+/** Numeric storage scheme from the on-chain registry; Host pointers use scheme 4. */
 export type MarketStorageScheme = 0 | 1 | 2 | 3 | 4;
 
 export type MarketFailurePhase =
@@ -76,37 +71,13 @@ export type MarketLifecycleState =
 export type StreamId = `0x${string}`;
 export type EvmAddress = `0x${string}`;
 
-/**
- * Deployed Sui MarketRegistry coordinates. These are resolved from
- * config/deployment (NOT hardcoded constants) — the multichain invariant. The
- * deployed shared-object id is a cross-package input (contracts/host deployment).
- */
-export interface SuiMarketRegistryConfig {
-  readonly packageId: string;
-  readonly marketRegistryObjectId: string;
-}
-
-/**
- * Deployed Solana `livestreak` program coordinates. Base58; resolved from
- * config/deployment (NOT hardcoded) — the multichain invariant. The Sui-parallel
- * seam. `usdcMint` is unused by register/goLive/setEnded (kept for the canonical
- * addresses shape shared with the money-moving legs).
- */
-export interface SolanaMarketRegistryConfig {
-  readonly programId: string;
-  readonly usdcMint: string;
-}
-
 export interface ObserveRunMarketConfig {
   readonly walletInit: WalletInit;
   readonly seed: string | Uint8Array;
-  /** Required for EVM/Sui runs (the registry contract/object); absent on Solana (PDA-derived). */
+  /** Deployed Arc stream-registry contract. */
   readonly marketRegistryAddress?: EvmAddress;
   readonly title: string;
-  /** Required only for Sui runs; resolved from deployment, never a constant. */
-  readonly suiRegistry?: SuiMarketRegistryConfig;
-  /** Required only for Solana runs; resolved from deployment, never a constant. */
-  readonly solanaRegistry?: SolanaMarketRegistryConfig;
+
 }
 
 export interface ObserveRunMarketOptions {

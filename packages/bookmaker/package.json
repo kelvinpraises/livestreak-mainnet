@@ -20,7 +20,6 @@
     "check": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src test",
     "test": "vitest run",
-    "e2e:chain": "npm run build -w @livestreak/wallet && tsx test/e2e/create-vault.e2e.ts",
     "dev": "tsc -w -p tsconfig.json"
   },
   "dependencies": {

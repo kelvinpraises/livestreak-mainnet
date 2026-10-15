@@ -16,7 +16,6 @@ export type {
   ObserveRunMarketConfig,
   ObserveRunMarketOptions,
   StreamId,
-  SuiMarketRegistryConfig
 } from "./types.js";
 
 export { observeRunStreamId } from "./chains/evm.js";

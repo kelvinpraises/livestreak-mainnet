@@ -6,13 +6,7 @@ import { buildStewardFact } from "./fact.js";
 
 // --- Contract fact source (WAVE 5 BUILD) ---
 //
-// Reads on-chain vault/market state into `source:"contract"` facts. The reads use the `@livestreak/contracts`
-// ABIs/addresses and go through `@livestreak/wallet` for ANY Sui touch (wallet is the sole SDK owner —
-// we never pin `@mysten/sui`). The host/executor injects a per-chain `ContractVaultReader`; this adapter
-// only translates the reader's domain values into canonical facts.
-//
-// MULTICHAIN: the reader carries its `chain` (EVM/Sui) and resolves addresses per chain — the fact `key`
-// is chain-agnostic SHAPE, the VALUES are resolved per chain by the reader.
+// The injected Arc reader supplies contract values; this adapter converts them into facts.
 
 export interface ContractVaultFact {
   readonly key: string;

@@ -289,7 +289,6 @@ export type {
   ObserveRunMarketConfig,
   ObserveRunMarketOptions,
   StreamId,
-  SuiMarketRegistryConfig,
   EvmAddress
 } from "./market/index.js";
 

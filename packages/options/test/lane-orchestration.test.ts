@@ -103,7 +103,7 @@ describe("multi-vault funding survives a stale snapshot (bug: the 2nd vault wipe
   const vaultA = asVaultId("vault_01");
   const vaultB = asVaultId("vault_02");
 
-  // A fresh-mint NFT that NEVER shows a just-funded lane — exactly the Solana read-after-write window
+  // A fresh-mint NFT that NEVER shows a just-funded lane — exactly an RPC read-after-write window
   // where the polled snapshot lags the write. `setLanes` is full-replacement, so without the runtime's
   // own-write overlay the second fund would rebuild `desired` from these zero lanes and wipe the first.
   const laggingMintReader = () =>

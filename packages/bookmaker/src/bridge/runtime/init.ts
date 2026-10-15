@@ -3,11 +3,7 @@
 
 import type { PackageRuntimeInit, SessionWallet } from "@livestreak/schema";
 
-import type {
-  BookmakerContractAddresses,
-  BookmakerSolanaAddresses,
-  BookmakerSuiObjectIds
-} from "../../chains/addresses.js";
+import type { BookmakerContractAddresses } from "../../chains/addresses.js";
 import type { BookmakerChainConfig } from "../../chains/types.js";
 import type { BookmakerMarketContext } from "../../model/market-context.js";
 import type { BookmakerWatchSource } from "../../model/watch-source.js";
@@ -29,10 +25,9 @@ const requireContract = (
   return value;
 };
 
-// The canonical contracts bag names the EVM stablecoin "mockUsdc"; the older console subset renamed
-// it "usdc". Accept either so the full bag flows straight through.
+// The deployment bag supplies the real Arc collateral address as usdc.
 const requireUsdc = (contracts: Readonly<Record<string, string>>): string => {
-  const value = (contracts.usdc ?? contracts.mockUsdc)?.trim();
+  const value = contracts.usdc?.trim();
   if (value === undefined || value.length === 0) {
     throw new Error('PackageRuntimeInit.contracts missing required bookmaker address "usdc"');
   }
@@ -48,42 +43,8 @@ export const bookmakerContractAddressesFromInit = (
   usdc: requireUsdc(contracts)
 });
 
-export const bookmakerSuiObjectIdsFromInit = (
-  contracts: Readonly<Record<string, string>>
-): BookmakerSuiObjectIds => ({
-  packageId: requireContract(contracts, "packageId"),
-  vaultDriverRegistry: requireContract(contracts, "vaultDriverRegistry"),
-  vaultRegistry: requireContract(contracts, "vaultRegistry"),
-  marketRegistry: requireContract(contracts, "marketRegistry"),
-  dripsRegistry: requireContract(contracts, "dripsRegistry"),
-  streamsRegistry: requireContract(contracts, "streamsRegistry")
-});
-
-export const bookmakerSolanaAddressesFromInit = (
-  contracts: Readonly<Record<string, string>>
-): BookmakerSolanaAddresses => ({
-  programId: requireContract(contracts, "programId"),
-  usdcMint: requireContract(contracts, "usdcMint")
-});
-
-// Dispatch the addresses bag on the wallet chain: EVM contract addresses vs Sui object ids vs
-// the Solana program bag (all other accounts are PDAs derived from it).
-const bookmakerAddressesFromInit = (
-  init: PackageRuntimeInit
-): BookmakerContractAddresses | BookmakerSuiObjectIds | BookmakerSolanaAddresses =>
-  init.wallet.walletInit.chain === "sui"
-    ? bookmakerSuiObjectIdsFromInit(init.contracts)
-    : init.wallet.walletInit.chain === "solana"
-      ? bookmakerSolanaAddressesFromInit(init.contracts)
-      : bookmakerContractAddressesFromInit(init.contracts);
-
-// The funding token: the USDC coin type on Sui, the SPL mint on Solana, the contract address on EVM.
-const bookmakerFundingTokenFromInit = (init: PackageRuntimeInit): string =>
-  init.wallet.walletInit.chain === "sui"
-    ? `${bookmakerSuiObjectIdsFromInit(init.contracts).packageId}::mock_usdc::MOCK_USDC`
-    : init.wallet.walletInit.chain === "solana"
-      ? bookmakerSolanaAddressesFromInit(init.contracts).usdcMint
-      : bookmakerContractAddressesFromInit(init.contracts).usdc;
+const bookmakerAddressesFromInit = (init: PackageRuntimeInit): BookmakerContractAddresses => bookmakerContractAddressesFromInit(init.contracts);
+const bookmakerFundingTokenFromInit = (init: PackageRuntimeInit): string => bookmakerContractAddressesFromInit(init.contracts).usdc;
 
 export const bookmakerChainConfigFromPackageInit = (
   init: PackageRuntimeInit,

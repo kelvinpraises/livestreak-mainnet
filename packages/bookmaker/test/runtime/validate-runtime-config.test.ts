@@ -150,7 +150,7 @@ describe("validateBookmakerRuntimeConfig", () => {
     expect(result.ok).toBe(false);
     if (result.ok === false) {
       expect(result.issues).toContain(
-        "addresses must match a chain shape (evm contract addresses, sui object ids, or solana programId/usdcMint)"
+        "addresses must contain the Arc EVM contract addresses"
       );
     }
   });

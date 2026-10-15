@@ -14,7 +14,7 @@ const forbiddenEffectPatterns = [
 
 // WAVE 5 (BUILD decision): the steward runtime now CONSUMES the owning packages' published surfaces
 // for its injected-port adapters (@livestreak/contracts reads, @livestreak/host descriptor types,
-// @livestreak/observe board, @livestreak/wallet for Sui). Those package-root imports are sanctioned.
+// @livestreak/observe board, @livestreak/wallet for signing). Those package-root imports are sanctioned.
 // What stays forbidden is reaching into another package's INTERNALS (deep `#run`/`#worker`/`#bridge`
 // subpaths, `host/src`, `packages/options|bookmaker` source) and pulling in options/bookmaker at all.
 const forbiddenImportPatterns = [

@@ -3,11 +3,7 @@ import type { VaultMandate } from "@livestreak/schema";
 
 import type { WalletInit } from "@livestreak/schema";
 
-import type {
-  BookmakerContractAddresses,
-  BookmakerSolanaAddresses,
-  BookmakerSuiObjectIds
-} from "./addresses.js";
+import type { BookmakerContractAddresses } from "./addresses.js";
 
 export type TxId = string & { readonly __brand: "TxId" };
 
@@ -50,7 +46,7 @@ export interface BookmakerChain {
 export interface BookmakerChainConfig {
   readonly walletInit: WalletInit;
   readonly seed: string | Uint8Array;
-  readonly addresses: BookmakerContractAddresses | BookmakerSuiObjectIds | BookmakerSolanaAddresses;
+  readonly addresses: BookmakerContractAddresses;
   readonly hostUrl?: string;
   readonly readRpcUrl?: string;
 }

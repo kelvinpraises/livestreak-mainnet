@@ -49,7 +49,6 @@ observation events
 | Execute | Insufficient allowance | Partial — writer auto-approves up to deposit |
 | Execute | UserOp send / paymaster failure | Partial — classified `LiveStreakRuntimeError`; key released when no hash |
 | Execute | Receipt missing `VaultCreated` | Yes — `LiveStreakRuntimeError` |
-| Execute | Solana / Sui | Bound creation with explicit mandate, chain identity and operation; updated chain deployment required |
 | Bridge | Missing scope | Yes — `LiveStreakCapabilityError` |
 | Bridge | Expired capability grant | Yes — injected `nowMs` vs `grant.expiresAt` |
 | Bridge | `createVault` double-submit | Yes — same `createVaultOnce` + store as originate |
@@ -61,7 +60,7 @@ observation events
 1. **Within-runtime (deterministic):** `idempotencyKeyFromDraft` / `idempotencyKeyFromCreateIntent` hash vault-defining fields. `BookmakerRuntime.createVaultOnce` validates intent, computes key, and enforces at-most-one submit per key: settled → cached; pending `userOpHash` → `confirmCreateVault` (never blind-resubmit); new → `createVault`. Receipt-timeout records the hash as pending. Originate passes `guardedCreateVault: runtime.createVaultOnce`; bridge `callAction("createVault")` calls the same method.
 2. **Across runtime restarts:** all three writers look up the caller-supplied operation in authoritative chain state before publication/submission. Identical terms return the original vault, including after the funding deadline; conflicting terms reject. The contract also enforces that identity atomically. Different operations can intentionally create different vaults; similarity discovery does not make distinct operations unique.
 
-## Multichain layout
+## Arc execution layout
 
 ```text
 chains/     inward door — wallet + vaultDriver writes
@@ -75,34 +74,16 @@ bridge/     outward door — panel + scoped callAction
 Creation requires caller-authored `livestreak-mandate/1` terms, a nonzero 32-byte operation ID, and `hostUrl`. The writer verifies the actual RPC chain identity, publishes the canonical bytes and checks their digest before signing. Creation stores the immutable commitment and funding deadline with the seed. Failed publication/readback sends no creation transaction.
 
 - EVM: `VaultDriver.createBoundVault`; `VaultCreated` identifies the vault.
-- Sui: `vault_driver::create_bound_vault`; immutable dynamic fields hold terms and creator/operation recovery. Split-coin values use `u64`.
-- Solana: `create_vault_seeded` now requires commitment, funding close and operation ID; the new v2 protocol state and WASM reader must ship together. Retry skips the SPL deposit transfer.
 
 Independent Options/Steward readers bind the exact body to chain, market, question, commitment and deadline. New funding/top-ups require a verified, open mandate; removal/refund paths remain available without Host content. SDK checks use chain time, and actual streaming/accounting stops at each vault's deadline.
 
-Solana requires a fresh alpha protocol state: old unversioned engine blobs are rejected explicitly. Existing deployment snapshots are not a migration plan. No public deployment is claimed by these local tests.
 
 ## Errors
 
 Configuration, capability, transaction and mandate-validation failures propagate to the caller. Missing terms are never replaced by inferred settlement defaults.
 
-## On-chain proof (opt-in)
+## Verification
 
-Fast unit tests use a fake chain. The real executor path — `createWalletManager → USDC allowance → encode → AA send → poll → parse VaultCreated` — is covered by:
-
-- `test/chains/evm/encode.test.ts` — pure coercion (`sideToSolidityValue`, deposit/rate bounds, bytes32 marketId)
-- `test/e2e/create-vault.e2e.ts` — live stack proof via `npm run e2e:chain`
-
-```text
-anvil --port 8545 --block-time 1
-cd packages/contracts && npm run deploy -- --name localhost --force
-cd host && LIVESTREAK_AA_RPC_URL=http://127.0.0.1:8545 \
-  LIVESTREAK_AA_ENTRY_POINT=0x0000000071727De22E5E9d8BAf0edAc6f37da032 \
-  LIVESTREAK_AA_PAYMASTER_ADDRESS=<from localhost.json scopes.paymaster> \
-  LIVESTREAK_AA_ALLOW_DEV_KEY=1 npm run dev
-cd packages/bookmaker && npm run e2e:chain
-```
-
-Host `deploy-env` reads flat snapshot fields; `localhost.json` nests under `scopes` — set AA env explicitly (or use `LIVESTREAK_AA_CHAINS_FILE`) so embedded Alto starts.
-
-The e2e script mints USDC to the bookmaker Safe, registers a market, runs `chain.writer.createVault`, and asserts the returned `vaultId` matches the `VaultCreated` event and `Vault.vaultExists`.
+Unit tests cover mandate publication, EVM encoding and idempotent creation.
+The canonical Arc contracts are deployed. An authorized real-collateral market
+lifecycle through a configured mainnet Host and bundler remains to be verified.

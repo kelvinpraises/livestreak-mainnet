@@ -70,11 +70,11 @@ export const validateBookmakerRuntimeConfig = (
   }
 
   if (value.addresses === undefined || hasBookmakerChainAddresses(value.addresses) === false) {
-    issues.push("addresses must match a chain shape (evm contract addresses, sui object ids, or solana programId/usdcMint)");
+    issues.push("addresses must contain the Arc EVM contract addresses");
   }
 
-  if (!isPlainObject(value.walletInit) || typeof (value.walletInit as { chain?: unknown }).chain !== "string") {
-    issues.push("walletInit with chain is required");
+  if (!isPlainObject(value.walletInit) || (value.walletInit as { chain?: unknown }).chain !== "evm") {
+    issues.push("walletInit with chain evm is required");
   }
 
   if (typeof value.seed !== "string" && !(value.seed instanceof Uint8Array)) {

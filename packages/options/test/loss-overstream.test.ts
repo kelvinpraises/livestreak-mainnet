@@ -7,10 +7,9 @@ import {
   lvstToNumber
 } from "../src/model/units.js";
 import { enrichLane, mapLane, type RawLane, type RawPosition } from "../src/chains/evm/decode.js";
-import { enrichSuiLane } from "../src/chains/sui/decode.js";
 import { asTokenId } from "../src/model/ids.js";
 
-// LVST loss-claimable was projected mis-scaled on EVM/Sui (and previously Solana): the vault returns the
+// LVST loss-claimable was projected mis-scaled on the reader: the vault returns the
 // USDC loss BASIS, but the panel scales by the chain's LVST decimals — so the basis rendered ~1e5–1e12×
 // too small (live: 0.007 shown where the claim minted 718). The readers now convert basis → LVST with the
 // on-chain formula (basis × mintRate / USDC_ONE) so the preview equals the mint. mintRate carries the
@@ -25,12 +24,7 @@ describe("lossBasisToLvst — loss preview equals the on-chain mint", () => {
     expect(lvstToNumber(lvst, 18)).toBeCloseTo(718, 6);
   });
 
-  it("Solana/Sui (9-dec LVST): 7.18 USDC × mintRate 100 → 718 whole LVST", () => {
-    const mintRate = 100n * 10n ** 9n; // 100 whole LVST per whole USDC, in 9-dec base units
-    const lvst = lossBasisToLvst(LOSS_BASIS, mintRate);
-    expect(lvst).toBe(718n * 10n ** 9n);
-    expect(lvstToNumber(lvst, 9)).toBeCloseTo(718, 6);
-  });
+
 
   it("the OLD bug: rendering the raw basis as 9-dec LVST gave ~0.007 (regression guard)", () => {
     // Before the fix the reader returned the basis and the projection scaled by 9 → the observed 0.007.
@@ -46,7 +40,7 @@ describe("lossBasisToLvst — loss preview equals the on-chain mint", () => {
 
 // Overstream = USDC that streamed out of a lane AFTER its vault resolved (committedRate × (min(maxEnd,
 // now) − resolvedAt)) — the exact pay_overage entitlement, refundable via withdraw. Was computed only on
-// Solana; the shared helper now feeds all three chains.
+// the reader; the shared helper keeps the units explicit.
 describe("computeOverstreamClaimable — post-resolution refundable stream", () => {
   const RATE = 10_000n; // 0.60 USDC/min = 0.01 USDC/s = 10_000 base units/s
 
@@ -110,7 +104,7 @@ describe("computeWinClaimable — projected payout before collect finalizes the 
 
 // The reader enrichers must carry overstreamClaimable through to the lane so the projection can surface
 // the settlement-card Overstream row on every chain (undefined when not provided keeps open lanes clean).
-describe("enrichLane / enrichSuiLane — overstream passthrough", () => {
+describe("enrichLane — overstream passthrough", () => {
   const tokenId = asTokenId(9n);
   const rawLane: RawLane = { vaultId: `0x${"cd".repeat(32)}`, side: 1, rate: 10_000n };
   const position: RawPosition = {
@@ -132,9 +126,5 @@ describe("enrichLane / enrichSuiLane — overstream passthrough", () => {
     expect(lane.overstreamClaimable).toBeUndefined();
   });
 
-  it("Sui enrichSuiLane attaches overstreamClaimable when given", () => {
-    const base = mapLane(tokenId, rawLane, position); // shape-compatible OptionsLane
-    const lane = enrichSuiLane(base, 0n, 500n, "no", 2_000_000n);
-    expect(lane.overstreamClaimable).toBe(2_000_000n);
-  });
+
 });

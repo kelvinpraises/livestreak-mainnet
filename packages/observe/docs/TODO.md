@@ -64,7 +64,7 @@ integrity = content-addressed id + creator-written pointer (no sig)
 - [x] `observeRunStreamId(observer, runId)` helper + neg-test — **DONE** (golden vector cast-verified; 433 tests)
 - [ ] **observe lifecycle writes** — `createMarketLifecycle(config) → { goLive, setEnded }`, wallet-direct under `market/chains/**`, same creator Safe as `registerMarket`, `scheme` as `uint8`. Accepted from cli (`from-cli__expose-setended`); prompt queued at `context/temp-convo/prompts/observe.md`; CLI then routes to it + deletes its TEMP write.
 - [ ] consumer: **options** = `readStreamState(marketId)` (raw pointer, contract I/O only); **app** resolves `scheme+id → gateway url` + plays (v0 app-level, no manifest). options confirmed this split.
-- [ ] (forward-thinking) brand `userOpHash` → opaque `TxId` on `MarketRegisterResult` **and** `MarketLifecycleWriteResult` (chain-agnostic for Sui; AA poll stays in `chains/evm`) — per options shared-patterns
+- [ ] (forward-thinking) brand `userOpHash` → opaque `TxId` on `MarketRegisterResult` **and** `MarketLifecycleWriteResult` (AA polling stays in `chains/evm`) — per options shared-patterns
 
 > init doc (`livestreak.json`) loader/cache is **CLI-owned** — nothing to build here; observe only surfaces `marketId` on the board cell.
 

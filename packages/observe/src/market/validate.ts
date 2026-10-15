@@ -44,28 +44,8 @@ export const validateObserveRunMarketConfig = (
       );
     }
 
-    // The registry ref is chain-shaped: EVM = the registry contract address; Sui/Solana carry
-    // their own deployment refs (suiRegistry / solanaRegistry) and ignore marketRegistryAddress.
-    if (walletInit.chain === "evm" && !isEvmAddress(input.marketRegistryAddress ?? "")) {
-      return yield* Effect.fail(
-        new LiveStreakConfigError({
-          message: "market.marketRegistryAddress must be a 0x-prefixed EVM address"
-        })
-      );
-    }
-    if (walletInit.chain === "sui" && input.suiRegistry === undefined) {
-      return yield* Effect.fail(
-        new LiveStreakConfigError({
-          message: "market.suiRegistry is required for Sui runs"
-        })
-      );
-    }
-    if (walletInit.chain === "solana" && input.solanaRegistry === undefined) {
-      return yield* Effect.fail(
-        new LiveStreakConfigError({
-          message: "market.solanaRegistry is required for Solana runs"
-        })
-      );
+    if (!isEvmAddress(input.marketRegistryAddress ?? "")) {
+      return yield* Effect.fail(new LiveStreakConfigError({ message: "market.marketRegistryAddress must be a 0x-prefixed EVM address" }));
     }
 
     if (input.seed === undefined || (typeof input.seed === "string" && input.seed.length === 0)) {

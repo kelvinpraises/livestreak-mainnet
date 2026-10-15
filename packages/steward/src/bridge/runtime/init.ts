@@ -121,17 +121,5 @@ export const createStewardRuntimeBootstrap = (
 export const stewardChainConfigFromPackageInit = (init: PackageRuntimeInit): StewardChainConfig => ({
   walletInit: init.wallet.walletInit,
   seed: init.wallet.seed,
-  addresses:
-    init.wallet.walletInit.chain === "sui"
-      ? {
-          packageId: init.contracts.packageId ?? "",
-          stewardRegistry: init.contracts.stewardRegistry ?? "",
-          vaultRegistry: init.contracts.vaultRegistry ?? ""
-        }
-      : init.wallet.walletInit.chain === "solana"
-        ? {
-            programId: init.contracts.programId ?? "",
-            usdcMint: init.contracts.usdcMint ?? ""
-          }
-        : { stewardRegistry: init.contracts.stewardRegistry ?? "" }
+  addresses: { stewardRegistry: init.contracts.stewardRegistry ?? "" }
 });

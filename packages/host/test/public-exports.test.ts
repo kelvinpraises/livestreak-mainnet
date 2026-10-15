@@ -18,9 +18,6 @@ describe("host public exports", () => {
     expect(publicExport("HostCacheReceipt")).toBeDefined();
     expect(publicExport("HostCacheReceiptRequest")).toBeDefined();
     expect(publicExport("AaCapabilityDescriptor")).toBeDefined();
-    expect(publicExport("SuiSponsorshipDescriptor")).toBeDefined();
-    expect(publicExport("SuiSponsorRequest")).toBeDefined();
-    expect(publicExport("SuiSponsorResponse")).toBeDefined();
     expect(publicExport("MemoryRecordInput")).toBeDefined();
     expect(publicExport("MemoryRecordDto")).toBeDefined();
     expect(publicExport("MemoryRecallResponse")).toBeDefined();

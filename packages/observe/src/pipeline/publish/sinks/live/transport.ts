@@ -54,7 +54,7 @@ export interface HostFmp4IngestInput {
   /** Stream/market id keying the host ring buffer (the per-stream feed key the viewer consumes under). */
   readonly streamId: string;
   readonly runId?: string;
-  readonly chain?: "evm" | "sui" | "solana";
+  readonly chain?: "evm";
   readonly accessToken?: string;
   /** Injectable WS factory (defaults to a lazily-imported `ws` client — Node only). */
   readonly webSocketFactory?: WebSocketFactory;

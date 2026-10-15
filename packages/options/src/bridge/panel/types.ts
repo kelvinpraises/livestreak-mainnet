@@ -71,7 +71,7 @@ export interface OptionsNftPanel {
     readonly approved?: string;
     readonly isOperator?: boolean;
   };
-  /** Shared Drips budget + canonical account status. EVM-only fields are absent on Sui. */
+  /** Shared Drips budget and canonical account status. */
   readonly account: {
     readonly status: OptionsAccountStatus;
     /** LIVE shared balance — stored minus what's streamed since the last write. Always the real number. */

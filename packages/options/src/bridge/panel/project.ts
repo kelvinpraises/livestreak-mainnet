@@ -43,7 +43,7 @@ export interface OptionsPausedLane {
 }
 
 export interface ProjectPanelContext {
-  /** LVST decimals for the active chain (EVM 18 / Sui 9) — normalizes the LVST panel. */
+  /** LVST decimals (18 on Arc) — normalizes the LVST panel. */
   readonly lvstDecimals: number;
   /** Paused lanes (session intent), overlaid onto the matching ledger position by tokenId/vault/side. */
   readonly pausedLanes?: readonly OptionsPausedLane[];
@@ -596,7 +596,7 @@ const projectVaultPanel = (
       no: sharesToNumber(snapshot?.shareTotals.no ?? 0n)
     },
     odds,
-    // Fall back to the market's createdAt only when the vault carries none (EVM: always 0; Sui sets a
+    // Fall back to the market's createdAt only when the vault carries none (EVM: always 0; the reader can supply a
     // real one at decode). Keeps a genuine per-vault timestamp where it exists, kills the epoch-0 render
     // where it doesn't.
     timing: {
@@ -647,8 +647,8 @@ const projectNftPanel = (entry: OptionsNftSnapshot, ctx: ProjectPanelContext): O
   const status: OptionsAccountStatus =
     activeRate > 0n ? "streaming" : balance > 0n ? "idle" : hasDepleted ? "depleted" : "empty";
 
-  // Runway = when the shared balance runs dry. EVM's reader supplies the exact Drips maxEnd; Solana's
-  // doesn't, so fall back to now + balance ÷ drain-rate. Without this a funded, streaming Solana position
+  // Runway = when the shared balance runs dry. The reader supplies the exact Drips maxEnd when available; an incomplete snapshot
+  // doesn't, so fall back to now + balance ÷ drain-rate. Without this a funded, streaming position
   // showed RUNWAY "—" (no endsAtMs) even though it clearly had money left.
   const runwayEndMs =
     entry.nft.runwayEndMs ??

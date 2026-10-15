@@ -156,7 +156,6 @@ src/
     chains/
       index.ts
       evm.ts
-      sui.ts
 
   scope/
     scopes.ts

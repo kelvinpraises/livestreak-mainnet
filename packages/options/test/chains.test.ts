@@ -5,7 +5,6 @@ import type { Address } from "@livestreak/schema";
 
 import { asTokenId } from "../src/model/ids.js";
 import { createOptionsChain, asTxId } from "../src/chains/index.js";
-import { createSuiOptionsChain } from "../src/chains/sui/index.js";
 import { createFakeChainWriter, DEFAULT_FAKE_ADDRESSES } from "./helpers/fake-chain.js";
 
 const evmChainConfig = {
@@ -54,30 +53,9 @@ describe("createOptionsChain", () => {
     expect(txId).toBe(asTxId("0xfake_user_op_hash"));
   });
 
-  it("rejects sui walletInit with invalid (EVM-format) addresses at config time", () => {
-    expect(() =>
-      createOptionsChain({
-        walletInit: {
-          chain: "sui",
-          seedSource: "raw",
-          config: { rpcUrl: "https://fullnode.testnet.sui.io:443" }
-        },
-        seed: "test-seed",
-        addresses: DEFAULT_FAKE_ADDRESSES
-      })
-    ).toThrow(LiveStreakConfigError);
-  });
 
-  it("createSuiOptionsChain with no config returns a stub whose operations throw", async () => {
-    const suiChain = createSuiOptionsChain();
-    await expect(suiChain.writer.fund({} as never)).rejects.toBeInstanceOf(LiveStreakConfigError);
-    await expect(
-      suiChain.reader.readPendingBoundaries("0x01" as never, "yes")
-    ).rejects.toBeInstanceOf(LiveStreakConfigError);
-    await expect(
-      suiChain.writer.advance({ vaultId: "0x01" as never, side: "yes" })
-    ).rejects.toBeInstanceOf(LiveStreakConfigError);
-  });
+
+
 
   it("rejects unknown wallet chains", () => {
     expect(() =>
@@ -93,34 +71,7 @@ describe("createOptionsChain", () => {
     ).toThrow(LiveStreakConfigError);
   });
 
-  it("constructs the solana leg from base58 program + usdc addresses", () => {
-    const chain = createOptionsChain({
-      walletInit: {
-        chain: "solana",
-        seedSource: "raw",
-        config: { rpcUrl: "http://127.0.0.1:8899" }
-      },
-      seed: "test-seed",
-      addresses: {
-        programId: "11111111111111111111111111111111",
-        usdcMint: "So11111111111111111111111111111111111111112"
-      }
-    } as never);
-    expect(chain.reader).toBeDefined();
-    expect(chain.writer).toBeDefined();
-  });
 
-  it("rejects solana addresses that are not valid base58 pubkeys", () => {
-    expect(() =>
-      createOptionsChain({
-        walletInit: {
-          chain: "solana",
-          seedSource: "raw",
-          config: { rpcUrl: "http://127.0.0.1:8899" }
-        },
-        seed: "test-seed",
-        addresses: { programId: "not-base58!", usdcMint: "also-bad" }
-      } as never)
-    ).toThrow(LiveStreakConfigError);
-  });
+
+
 });

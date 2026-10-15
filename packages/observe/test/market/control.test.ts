@@ -20,7 +20,7 @@ import {
   defaultFakeRegisterResult
 } from "#test/helpers/fake-market-registrar.js";
 
-// 0x + 64 hex — the bytes32 shape marketId has on EVM, Sui AND Solana.
+// 0x + 64 hex — the on-chain bytes32 market ID.
 const MARKET = `0x${"ab".repeat(32)}`;
 
 const testSessionInit = {

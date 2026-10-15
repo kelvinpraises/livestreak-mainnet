@@ -143,7 +143,6 @@ export type {
   OptionsReader,
   OptionsWriter,
   OptionsContractAddresses,
-  OptionsSuiObjectIds,
   TxId,
   MintNftInput,
   MintResult,
@@ -167,7 +166,5 @@ export {
   createOptionsChain,
   resolveOptionsAccountAddress,
   validateOptionsChainConfig,
-  validateOptionsSuiObjectIds,
   asTxId
 } from "./chains/index.js";
-export { createOptionsSuiConfig } from "./chains/sui/config.js";

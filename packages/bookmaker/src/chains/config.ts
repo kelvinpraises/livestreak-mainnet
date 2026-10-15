@@ -3,11 +3,7 @@
 import { LiveStreakConfigError } from "@livestreak/core";
 import type { WalletInit } from "@livestreak/schema";
 
-import {
-  validateBookmakerSolanaAddresses,
-  validateBookmakerSuiObjectIds,
-  type BookmakerContractAddresses
-} from "./addresses.js";
+import type { BookmakerContractAddresses } from "./addresses.js";
 import type { BookmakerChainConfig } from "./types.js";
 import { validateBookmakerContractAddresses } from "./evm/addresses.js";
 
@@ -42,12 +38,8 @@ export const validateBookmakerChainConfig = (input: unknown): BookmakerChainConf
     });
   }
 
-  const addresses =
-    walletInit.chain === "sui"
-      ? validateBookmakerSuiObjectIds(input.addresses)
-      : walletInit.chain === "solana"
-        ? validateBookmakerSolanaAddresses(input.addresses)
-        : validateBookmakerContractAddresses(input.addresses as unknown as BookmakerContractAddresses);
+  if (walletInit.chain !== "evm") throw new LiveStreakConfigError({ message: "Only Arc EVM wallets are supported" });
+  const addresses = validateBookmakerContractAddresses(input.addresses as unknown as BookmakerContractAddresses);
 
   const readRpcUrl =
     input.readRpcUrl === undefined
@@ -71,20 +63,11 @@ const hasNonEmptyStrings = (value: unknown, keys: readonly string[]): boolean =>
     return typeof field === "string" && field.length > 0;
   });
 
-// One complete per-chain shape: EVM contract addresses, Sui object ids, or the Solana program bag.
+// Require the complete Arc contract address bag.
 export const hasBookmakerChainAddresses = (
   addresses: unknown
 ): addresses is BookmakerChainConfig["addresses"] =>
-  hasNonEmptyStrings(addresses, ["vaultDriver", "marketRegistry", "vault", "usdc"]) ||
-  hasNonEmptyStrings(addresses, [
-    "packageId",
-    "vaultDriverRegistry",
-    "vaultRegistry",
-    "marketRegistry",
-    "dripsRegistry",
-    "streamsRegistry"
-  ]) ||
-  hasNonEmptyStrings(addresses, ["programId", "usdcMint"]);
+  hasNonEmptyStrings(addresses, ["vaultDriver", "marketRegistry", "vault", "usdc"]);
 
 // --- helpers ---
 
