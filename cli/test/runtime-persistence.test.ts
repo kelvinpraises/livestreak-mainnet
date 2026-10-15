@@ -111,6 +111,7 @@ describe("observe boards persistence port (file-backed)", () => {
     await writeStateFile(boardsPath(), { "remote-A": board("A"), "remote-B": board("B") });
     const port = await loadObserveBoardsPort("remote-A");
     expect(port.initial).toEqual({ "remote-A": board("A") });
+    await readUntil<Record<string, unknown>>(boardsPath(), value => Object.keys(value).length === 1);
   });
 
   it("prunes prior boots' orphan boards on load — the file never becomes an archive", async () => {

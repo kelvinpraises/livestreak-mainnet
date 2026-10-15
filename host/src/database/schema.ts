@@ -7,15 +7,14 @@ import { sql } from "kysely";
 // shapes the mapper derives from these rows. Kysely table definitions and row types
 // live together here; `connection.ts` consumes the DB type.
 
-export type ChainTag = "evm" | "sui" | "solana";
+export type ChainTag = "evm";
 export type DeploymentScopes = Partial<Record<ChainTag, string>>;
 
 // The VM tag alone is insufficient: two EVM networks can have identical contract/market IDs.
 // Empty scope belongs to legacy rows and isolated fixtures, never a configured public reader.
 export const deploymentScopeWhere = (scopes: DeploymentScopes = {}) => sql<boolean>`deployment_scope = CASE chain
   WHEN 'evm' THEN ${scopes.evm ?? ''}
-  WHEN 'sui' THEN ${scopes.sui ?? ''}
-  WHEN 'solana' THEN ${scopes.solana ?? ''} END`;
+ END`;
 
 // One row per market == one stream header on the homepage / stream page. `route_id` is
 // what the app fetches `/stream/:id` by (== market_id). Per-stream aggregates

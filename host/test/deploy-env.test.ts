@@ -5,12 +5,12 @@ import { describe, expect, it } from "vitest";
 import { loadDeploySnapshotConfig } from "#config/deployment.js";
 
 const HOST_ROOT = resolve(fileURLToPath(import.meta.url), "..", "..");
-const LOCALHOST_SNAPSHOT = resolve(
+const ARC_SNAPSHOT = resolve(
   HOST_ROOT,
-  "../packages/contracts/chains/evm/deployments/localhost.json"
+  "../packages/contracts/chains/evm/deployments/arc-mainnet.json"
 );
 
-const snapshot = () => JSON.parse(readFileSync(LOCALHOST_SNAPSHOT, "utf8")) as {
+const snapshot = () => JSON.parse(readFileSync(ARC_SNAPSHOT, "utf8")) as {
   chainId: number;
   rpc: string;
   scopes: {
@@ -22,7 +22,7 @@ const snapshot = () => JSON.parse(readFileSync(LOCALHOST_SNAPSHOT, "utf8")) as {
 describe("loadDeploySnapshotConfig", () => {
   it("returns the AA fields from the nested deploy snapshot scopes", () => {
     const data = snapshot();
-    const config = loadDeploySnapshotConfig(LOCALHOST_SNAPSHOT);
+    const config = loadDeploySnapshotConfig(ARC_SNAPSHOT);
 
     expect(config.chainId).toBe(data.chainId);
     expect(config.rpcUrl).toBe(data.rpc);
@@ -32,7 +32,7 @@ describe("loadDeploySnapshotConfig", () => {
 
   it("is a pure read — it does not mutate process.env", () => {
     const before = process.env.LIVESTREAK_AA_RPC_URL;
-    loadDeploySnapshotConfig(LOCALHOST_SNAPSHOT);
+    loadDeploySnapshotConfig(ARC_SNAPSHOT);
     expect(process.env.LIVESTREAK_AA_RPC_URL).toBe(before);
   });
 

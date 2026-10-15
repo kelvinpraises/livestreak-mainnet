@@ -5,7 +5,6 @@ import {
   asMarketId,
   asVaultId,
   createOptionsChain,
-  createOptionsSuiConfig,
   readVaultSnapshot,
   type OptionsContractAddresses,
   type OptionsMarketSnapshot,
@@ -13,54 +12,18 @@ import {
   type OptionsVaultSnapshot
 } from "@livestreak/options";
 import type { WalletInit } from "@livestreak/schema";
-import type { SuiNetwork } from "@livestreak/wallet";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import type { CatalogReaderProvider } from "./catalog.js";
 
-// Normalize the Sui network from the host's canonical env var at this edge (localnet default).
-const resolveSuiNetworkFromEnv = (): SuiNetwork => {
-  const value = process.env.LIVESTREAK_SUI_NETWORK;
-  if (value === "mainnet" || value === "testnet" || value === "devnet" || value === "localnet") {
-    return value;
-  }
-  return "localnet";
-};
-
-// host/src/features/catalog -> host root is three levels up.
-const CATALOG_DIR = resolve(fileURLToPath(import.meta.url), "..");
-const HOST_ROOT = resolve(CATALOG_DIR, "..", "..", "..");
-
-const DEFAULT_SUI_DEPLOYMENT = resolve(
-  HOST_ROOT,
-  "../packages/contracts/chains/sui/deployments/localnet.json"
-);
-
-const DEFAULT_SOLANA_DEPLOYMENT = resolve(
-  HOST_ROOT,
-  "../packages/contracts/chains/solana/deployments/localnet.json"
-);
-
-// World-known anvil dev key. Reads never sign — the options reader only ever issues
-// `eth_call` against `readRpcUrl`; the seed is required by the chain-config validator but
-// the wallet account is derived lazily and only for writes (which the catalog never does).
 const READONLY_EVM_SEED =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
-
-const readJsonFile = <T>(path: string): T | null => {
-  try {
-    return JSON.parse(readFileSync(path, "utf8")) as T;
-  } catch {
-    return null;
-  }
-};
 
 // Parse the EVM deploy snapshot through the single contracts parser (no local JSON.parse of the AA
 // snapshot), degrading to null so an absent/unparseable snapshot just omits the EVM reader.
 const readEvmSnapshot = (path: string): EvmDeployOutput | null => {
   try {
-    return readDeploymentOutputFromPath(path);
+    const snapshot = readDeploymentOutputFromPath(path);
+    if (snapshot.chainId !== 5042) return null;
+    return snapshot;
   } catch {
     return null;
   }
@@ -130,106 +93,24 @@ const buildEvmReader = (): OptionsReader | null => {
   }
 };
 
-const buildSuiReader = (): OptionsReader | null => {
-  const deploymentPath =
-    process.env.LIVESTREAK_SUI_DEPLOYMENT ?? DEFAULT_SUI_DEPLOYMENT;
-  const deployment = readJsonFile<Parameters<typeof createOptionsSuiConfig>[0]["deployment"]>(
-    deploymentPath
-  );
-  if (deployment === null) return null;
-  const rpcUrl = process.env.LIVESTREAK_SUI_RPC_URL ?? deployment.rpc;
-  if (rpcUrl === undefined || rpcUrl.length === 0) return null;
-  // The sponsor mnemonic is env-only (never baked); falls back to the localnet dev
-  // mnemonic for reads only. Reads never sign.
-  const seed =
-    process.env.LIVESTREAK_SUI_SPONSOR_MNEMONIC ??
-    "cargo town galaxy wonder animal digital buddy member object detect home chapter";
-  // Host reads the Sui network at its env edge and passes it IN — @livestreak/wallet no longer
-  // reads it ambiently. Defaults to localnet when unset/invalid.
-  const network = resolveSuiNetworkFromEnv();
-  try {
-    const config = createOptionsSuiConfig({ deployment, seed, rpcUrl, network });
-    return createOptionsChain(config).reader;
-  } catch (error) {
-    console.warn(`[catalog]: Sui reader unavailable — ${String(error)}`);
-    return null;
-  }
-};
-
-const buildSolanaReader = (): OptionsReader | null => {
-  const deploymentPath =
-    process.env.LIVESTREAK_SOLANA_DEPLOYMENT ?? DEFAULT_SOLANA_DEPLOYMENT;
-  const deployment = readJsonFile<{
-    programId?: string;
-    rpc?: string;
-    accounts?: { usdcMint?: string };
-  }>(deploymentPath);
-  if (deployment === null) return null;
-  const rpcUrl = process.env.LIVESTREAK_SOLANA_RPC_URL ?? deployment.rpc;
-  const programId = deployment.programId;
-  const usdcMint = deployment.accounts?.usdcMint;
-  if (rpcUrl === undefined || rpcUrl.length === 0) return null;
-  if (programId === undefined || usdcMint === undefined) return null;
-  // Reads never sign — the reference mnemonic only satisfies the chain-config validator.
-  const seed =
-    process.env.LIVESTREAK_SOLANA_SPONSOR_SEED ??
-    "test test test test test test test test test test test junk";
-  const walletInit = {
-    chain: "solana",
-    seedSource: "raw",
-    config: { provider: rpcUrl }
-  } as unknown as WalletInit;
-  try {
-    return createOptionsChain({
-      walletInit,
-      seed,
-      addresses: { programId, usdcMint },
-      readRpcUrl: rpcUrl
-    }).reader;
-  } catch (error) {
-    console.warn(`[catalog]: Solana reader unavailable — ${String(error)}`);
-    return null;
-  }
-};
-
-// Build readers only for the explicit environment-selected scope. A missing deployment
-// or RPC yields a null reader but remains a coverage failure for an enabled chain.
 export const parseCatalogChains = (raw: string | undefined): readonly CatalogChain[] => {
-  if (raw === undefined) return ["evm"];
-  const chains = raw.split(",").map(value => value.trim());
-  if (!chains.length || chains.some(value => value !== "evm" && value !== "sui" && value !== "solana")) {
-    throw new Error("LIVESTREAK_CATALOG_CHAINS must list evm, sui and/or solana");
-  }
-  return [...new Set(chains)] as CatalogChain[];
+  if (raw === undefined || raw.split(",").every(value => value.trim() === "evm")) return ["evm"];
+  throw new Error("LIVESTREAK_CATALOG_CHAINS must be evm for the Arc edition");
 };
 
 export const createEnvReaderProvider = (): CatalogReaderProvider => {
   const enabled = parseCatalogChains(process.env.LIVESTREAK_CATALOG_CHAINS);
-  const evm = readEvmSnapshot(process.env.LIVESTREAK_DEPLOY_SNAPSHOT ?? deploymentPath());
-  const sui = readJsonFile<{ packageId?: string }>(process.env.LIVESTREAK_SUI_DEPLOYMENT ?? DEFAULT_SUI_DEPLOYMENT);
-  const solana = readJsonFile<{ programId?: string; rpc?: string }>(process.env.LIVESTREAK_SOLANA_DEPLOYMENT ?? DEFAULT_SOLANA_DEPLOYMENT);
-  const deploymentScopes = {
-    evm: evm?.scopes.protocol?.contracts?.marketRegistry
-      ? `eip155:${evm.chainId}:${evm.scopes.protocol.contracts.marketRegistry.toLowerCase()}` : 'unconfigured:evm',
-    sui: sui?.packageId ? `sui:${resolveSuiNetworkFromEnv()}:${sui.packageId}` : 'unconfigured:sui',
-    solana: solana?.programId ? `solana:${solana.rpc}:${solana.programId}` : 'unconfigured:solana',
-  };
-  const cache = new Map<CatalogChain, OptionsReader | null>();
-  const get = (chain: CatalogChain): OptionsReader | null => {
-    if (!enabled.includes(chain)) return null;
-    if (!cache.has(chain)) {
-      cache.set(
-        chain,
-        chain === "evm" ? buildEvmReader() : chain === "sui" ? buildSuiReader() : buildSolanaReader()
-      );
-    }
-    return cache.get(chain) ?? null;
-  };
+  const snapshot = readEvmSnapshot(process.env.LIVESTREAK_DEPLOY_SNAPSHOT ?? deploymentPath());
+  const registry = snapshot?.scopes.protocol?.contracts?.marketRegistry;
+  const deploymentScopes = { evm: registry ? `eip155:5042:${registry.toLowerCase()}` : "unconfigured:evm" };
+  let cached: OptionsReader | null | undefined;
   return {
-    reader: get,
+    reader: chain => {
+      if (chain !== "evm") return null;
+      if (cached === undefined) cached = buildEvmReader();
+      return cached;
+    },
     deploymentScopes,
-    // Configuration, not reachability. Explicitly enabled broken legs remain observable
-    // as failures; deployment files alone never opt another chain into indexing.
     availableChains: enabled
   };
 };
@@ -271,7 +152,7 @@ export const readMarketGraph = async (
   return { snap, vaultSnapshots };
 };
 
-// Parse LIVESTREAK_CATALOG_MARKETS="evm:0x..,sui:0x..,solana:0x.." into seed refs.
+// Parse LIVESTREAK_CATALOG_MARKETS="evm:0x.." into Arc seed refs.
 export const parseSeedMarkets = (
   raw: string | undefined
 ): readonly { chain: CatalogChain; marketId: string }[] => {
@@ -281,7 +162,7 @@ export const parseSeedMarkets = (
     const [chainPart, marketId] = entry.split(":");
     const chain = chainPart?.trim();
     const id = marketId?.trim();
-    if ((chain === "evm" || chain === "sui" || chain === "solana") && id !== undefined && id.length > 0) {
+    if (chain === "evm" && id !== undefined && id.length > 0) {
       out.push({ chain, marketId: id });
     }
   }

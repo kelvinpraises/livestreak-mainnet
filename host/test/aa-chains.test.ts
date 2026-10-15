@@ -23,8 +23,8 @@ describe("aa chains file", () => {
     writeFileSync(
       filePath,
       JSON.stringify([
-        { routeKey: "a", chainId: 1, name: "a", entryPoint: "0x0000000000000000000000000000000000000001" },
-        { routeKey: "a", chainId: 2, name: "b", entryPoint: "0x0000000000000000000000000000000000000002" }
+        { routeKey: "a", chainId: 5042, name: "a", entryPoint: "0x0000000000000000000000000000000000000001" },
+        { routeKey: "a", chainId: 5042, name: "b", entryPoint: "0x0000000000000000000000000000000000000002" }
       ])
     );
 
@@ -47,7 +47,7 @@ describe("aa deploy env merge", () => {
   });
 
   const snapshot: DeploySnapshotConfig = {
-    chainId: 31337,
+    chainId: 5042,
     rpcUrl: "http://snapshot-rpc.example",
     entryPoint: "0x00000000000000000000000000000000000000e1",
     safeModule: "0x00000000000000000000000000000000000000a1",
@@ -60,7 +60,7 @@ describe("aa deploy env merge", () => {
     expect(chain?.rpcUrl).toBe(snapshot.rpcUrl);
     expect(chain?.entryPoint).toBe(snapshot.entryPoint);
     expect(chain?.safeModule).toBe(snapshot.safeModule);
-    expect(chain?.chainId).toBe(31337);
+    expect(chain?.chainId).toBe(5042);
   });
 
   it("lets env win over the snapshot", () => {
@@ -98,14 +98,14 @@ describe("aa chains merge", () => {
       JSON.stringify([
         {
           routeKey: "local",
-          chainId: 31337,
+          chainId: 5042,
           name: "file-local",
           entryPoint: "0x0000000000000000000000000000000000000001",
           rpcUrl: "http://127.0.0.1:8545"
         },
         {
           routeKey: "other",
-          chainId: 1,
+          chainId: 5042,
           name: "other",
           entryPoint: "0x0000000000000000000000000000000000000002",
           rpcUrl: "http://127.0.0.1:8546"

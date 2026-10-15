@@ -1,5 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
-import { execFileSync } from "node:child_process";
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it, vi } from "vitest";
@@ -55,21 +54,10 @@ describe("explicit session resume", () => {
     const blocked = createRelay({ registry: new SessionRegistry(), dispatch });
     await blocked.handleCall(frame); expect(dispatch).not.toHaveBeenCalled();
   });
-  it("the real dev clean_slate function preserves existing role session files", async () => {
-    const dir = await mkdtemp(join(tmpdir(), "flow08-dev-"));
-    try {
-      const roles = join(dir, "roles"); await mkdir(roles);
-      const sessionFile = join(roles, "sessions.json"); await writeFile(sessionFile, "keep-session");
-      await mkdir(join(dir, "packages/options/dist"), { recursive: true });
-      await writeFile(join(dir, "packages/options/dist/index.js"), "");
-      const script = await readFile(new URL("../../dev.sh", import.meta.url), "utf8");
-      const start = script.indexOf("clean_slate() {"); const end = script.indexOf("\n}", start) + 2;
-      const fn = script.slice(start, end);
-      execFileSync("bash", ["-c", `log() { :; }; kill_servers() { :; }; sleep() { :; }; ${fn}\nclean_slate`], {
-        env: { ...process.env, ROOT: dir, ROLES_DIR: roles, FRESH_BUILD: "0" },
-      });
-      expect(await readFile(sessionFile, "utf8")).toBe("keep-session");
-    } finally { await rm(dir, { recursive: true, force: true }); }
+  it("mainnet startup never wipes sessions or automatically moves collateral", async () => {
+    const script = await readFile(new URL("../../dev.sh", import.meta.url), "utf8");
+    expect(script).not.toMatch(/\brm\b|clean_slate|mint\(|depositTo|anvil_setBalance/);
+    expect(script).toContain("npm run dev --workspace=host");
+    expect(script).toContain("npm run dev --workspace=app");
   });
-
 });

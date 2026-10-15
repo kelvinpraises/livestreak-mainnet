@@ -130,15 +130,14 @@ describe("catalog correctness under failure and identity permutations", () => {
     expect((await db.selectFrom("markets").selectAll().execute())[0]?.title).toBe("Show");
     expect(marketRead).toHaveBeenCalledTimes(2);
   });
-  it("serves every discovery endpoint from the same projection with chain-qualified detail routes", async () => {
+  it("serves every Arc discovery endpoint from the same projection", async () => {
     const evm = reader(snapshot("resolved"));
-    const sui = reader(snapshot());
     const { handle } = database();
     const deps = createHostRouteDeps(defaultHostServerConfig(), {
       catalogDb: handle,
       catalogReaders: {
-        availableChains: ["evm", "sui"],
-        reader: (chain) => (chain === "evm" ? evm : chain === "sui" ? sui : null),
+        availableChains: ["evm"],
+        reader: (chain) => (chain === "evm" ? evm : null),
       },
     });
     const app = createApp(deps);
@@ -150,76 +149,58 @@ describe("catalog correctness under failure and identity permutations", () => {
     expect(full.homepage.protocolStats).toEqual(home.protocolStats);
     expect(home.indexing.status).toBe("fresh");
     expect(home.protocolStats).toEqual({
-      totalVaults: 2,
-      totalVolume: 6,
+      totalVaults: 1,
+      totalVolume: 3,
       activeStreams: 0,
     });
-    expect(Object.keys(full.streams).sort()).toEqual(["evm:m", "sui:m"]);
-    await request(app).get("/stream/m").expect(409);
-    await request(app).get("/catalog/streams/m").expect(409);
-    const stream = (await request(app).get("/stream/m?chain=sui").expect(200)).body;
-    const alias = (await request(app).get("/catalog/streams/m?chain=sui").expect(200)).body;
-    expect(alias).toEqual(stream);
-    expect(stream).toEqual(full.streams["sui:m"]);
+    expect(Object.keys(full.streams)).toEqual(["evm:m"]);
+    const stream = (await request(app).get("/stream/m?chain=evm").expect(200)).body;
+    expect(
+      (await request(app).get("/catalog/streams/m?chain=evm").expect(200)).body,
+    ).toEqual(stream);
+    expect(stream).toEqual(full.streams["evm:m"]);
+    await request(app).get("/stream/m").expect(200);
     await request(app).get("/homepage?chain=unknown").expect(400);
     await request(app).get("/stream/m?chain=unknown").expect(400);
-    const scoped = (await request(app).get("/homepage?chain=solana").expect(200)).body;
-    expect(scoped.indexing.status).toBe("unavailable");
-    expect(scoped.streams).toEqual([]);
   });
-  it("scopes totals to verified graphs through a second-chain outage and recovery", async () => {
+  it("withholds Arc totals during an RPC outage and restores them after recovery", async () => {
     const { db } = database();
     const evm = reader(snapshot("resolved"));
-    const sui = reader(snapshot("resolved"));
     const indexer = createCatalogIndexer({
       db,
-      readers: {
-        availableChains: ["evm", "sui"],
-        reader: (c) => (c === "evm" ? evm : sui),
-      },
+      readers: { availableChains: ["evm"], reader: () => evm },
       baseUrl: "http://host",
       knownMarkets: () => [],
       now: () => NOW,
     });
     const model = createCatalogReadModel({ db, health: indexer.health, now: () => NOW });
     await indexer.syncAll();
-    expect((await model.homepage()).protocolStats.totalVolume).toBe(6);
-    const failure = vi.spyOn(sui, "readVault").mockRejectedValue(new Error("Sui offline"));
+    expect((await model.homepage()).protocolStats.totalVolume).toBe(3);
+    const failure = vi
+      .spyOn(evm, "readVault")
+      .mockRejectedValue(new Error("Arc RPC offline"));
     await indexer.syncAll();
-    const partial = await model.homepage();
-    expect(partial.indexing).toMatchObject({
-      status: "partial",
-      statsScope: "verified-subset",
-      verifiedChains: ["evm"],
-    });
-    expect(partial.protocolStats).toEqual({
-      totalVaults: 1,
-      totalVolume: 3,
-      activeStreams: 1,
-    });
-    expect(partial.lifetimeVaults.filter((v) => !v.stale).map((v) => v.chain)).toEqual([
-      "evm",
-    ]);
-    expect(partial.streams.find((s) => s.chain === "sui")).toMatchObject({
-      stale: true,
-      isLive: false,
-    });
+    const stale = await model.homepage();
+    expect(stale.indexing?.status).not.toBe("fresh");
+    expect(stale.protocolStats.totalVolume).toBe(0);
+    expect(stale.streams[0]).toMatchObject({ stale: true, isLive: false });
     failure.mockRestore();
     await indexer.syncAll();
     const recovered = await model.homepage();
     expect(recovered.indexing).toMatchObject({
       status: "fresh",
       statsScope: "complete",
-      verifiedChains: ["evm", "sui"],
+      verifiedChains: ["evm"],
     });
-    expect(recovered.protocolStats.totalVolume).toBe(6);
+    expect(recovered.protocolStats.totalVolume).toBe(3);
     expect(recovered.lifetimeVaults.every((v) => !v.stale)).toBe(true);
   });
-  it("excludes disabled-chain cache and treats a successfully enumerated empty chain as verified", async () => {
+  it("excludes another deployment's cache while verifying an empty Arc deployment", async () => {
     const { db } = database();
-    await seed(db, "sui", snapshot("resolved"), NOW);
+    await seed(db, "evm", snapshot("resolved"), NOW);
     const model = createCatalogReadModel({
       db,
+      deploymentScopes: { evm: "arc-new-registry" },
       health: () => ({ availableChains: ["evm"], failedChains: [], failedMarketKeys: [] }),
       now: () => NOW,
     });
@@ -236,8 +217,7 @@ describe("catalog correctness under failure and identity permutations", () => {
       totalVolume: 0,
       activeStreams: 0,
     });
-    expect(await model.stream("m", "sui")).toBeNull();
-    expect((await model.homepage("sui")).indexing?.statsScope).toBe("unavailable");
+    expect(await model.stream("m", "evm")).toBeNull();
     expect((await db.selectFrom("markets").selectAll().execute()).length).toBe(1);
   });
   it("rolls back a failed replacement without losing the old market and resolution", async () => {
@@ -324,44 +304,19 @@ describe("catalog correctness under failure and identity permutations", () => {
     await Promise.all([indexer.syncAll(), indexer.ensureAll(), indexer.ensureFresh("m")]);
     expect(spy).toHaveBeenCalledTimes(1);
   });
-  it("keeps identical IDs on different chains independent and rejects ambiguous routes", async () => {
+  it("removes an obsolete resolution when a fresh Arc observation changes the market state", async () => {
     const { db } = database();
     await seed(db, "evm", snapshot("resolved"), NOW);
-    await seed(db, "sui", snapshot(), NOW);
-    expect((await db.selectFrom("markets").selectAll().execute()).length).toBe(2);
-    expect(
-      (
-        await db
-          .selectFrom("vaults")
-          .selectAll()
-          .where("status", "in", ["open", "hot"])
-          .execute()
-      ).length,
-    ).toBe(1);
     expect((await db.selectFrom("resolutions").selectAll().execute()).length).toBe(1);
-    await expect(
-      createCatalogReadModel({ db, now: () => NOW }).stream("m"),
-    ).rejects.toThrow("ambiguous");
-    expect(
-      (
-        await db
-          .selectFrom("markets")
-          .selectAll()
-          .where("id", "=", "m")
-          .where("chain", "=", "sui")
-          .executeTakeFirst()
-      )?.chain,
-    ).toBe("sui");
     const home = await createCatalogReadModel({ db, now: () => NOW }).homepage();
-    expect(home.protocolStats.totalVaults).toBe(2);
-    expect(home.protocolStats.totalVolume).toBe(6);
-    expect(home.lifetimeVaults[0]?.chain).toBe("evm");
+    expect(home.protocolStats.totalVaults).toBe(1);
+    expect(home.protocolStats.totalVolume).toBe(3);
     await seed(db, "evm", snapshot(), NOW + 1);
-    expect(await db.selectFrom("resolutions").selectAll().execute()).toEqual([]); // Fresh chain observation removed the previous outcome.
+    expect(await db.selectFrom("resolutions").selectAll().execute()).toEqual([]);
   });
   it("exposes stale indexing and never presents an aged live cache as current", async () => {
     const { db } = database();
-    await seed(db, "solana", snapshot(), NOW);
+    await seed(db, "evm", snapshot(), NOW);
     const home = await createCatalogReadModel({ db, now: () => NOW + 50000 }).homepage();
     expect(home.indexing?.status).toBe("unavailable");
     expect(home.streams[0]?.isLive).toBe(false);
@@ -426,12 +381,12 @@ describe("catalog correctness under failure and identity permutations", () => {
     async (mode) => {
       const handle = createDatabase(":memory:");
       handles.push(handle);
-      const legacy = SCHEMA_DDL.replaceAll("  deployment_scope TEXT NOT NULL DEFAULT '',\n", "")
-        .replaceAll("deployment_scope, ", "")
-        .replace(
-        "id            TEXT NOT NULL,",
-        "id            TEXT PRIMARY KEY,",
+      const legacy = SCHEMA_DDL.replaceAll(
+        "  deployment_scope TEXT NOT NULL DEFAULT '',\n",
+        "",
       )
+        .replaceAll("deployment_scope, ", "")
+        .replace("id            TEXT NOT NULL,", "id            TEXT PRIMARY KEY,")
         .replace("id               TEXT NOT NULL,", "id               TEXT PRIMARY KEY,")
         .replace("vault_id    TEXT NOT NULL,", "vault_id    TEXT PRIMARY KEY,")
         .replace(/,\n {2}PRIMARY KEY \(chain, (id|vault_id)\)/g, "")

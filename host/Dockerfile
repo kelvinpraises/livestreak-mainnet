@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 #
 # LiveStreak host server (@livestreak/host-server) — the provider node: HTTP/WSS API
-# on :8787 (Express 5 + Remote Bridge Console WSS + live fMP4 video fan-out over WS).
+# on :8788 (Express 5 + Remote Bridge Console WSS + live fMP4 video fan-out over WS).
 # All traffic — including live video (/live/ingest producer + /live/watch viewers) — is
-# TCP on the single :8787 port; there is NO UDP media relay.
+# TCP on the single :8788 port; there is NO UDP media relay.
 #
 # Build context = repo root (same as ./Dockerfile), so this mirrors the app image's
 # monorepo-prune pattern: manifests first for a cached install, a single root
@@ -14,7 +14,7 @@
 # (better-sqlite3, sodium-* from the wallet SDK) must resolve for THIS platform; the
 # committed lock is macOS-generated and `npm ci` would install darwin binaries.
 #
-# RUN with a plain port map (`-p 8787:8787`, see deploy-host.yml): the live video path
+# RUN with a plain port map (`-p 8788:8788`, see deploy-host.yml): the live video path
 # is TCP-only, so host networking / a UDP relay port range is no longer needed.
 
 FROM node:22-slim
@@ -67,11 +67,11 @@ RUN npm run build -w @livestreak/host-server
 # comes from `--env-file` at `docker run` time — never baked into the image.
 ENV NODE_ENV=production
 ENV LIVESTREAK_HOST_BIND_HOST=0.0.0.0
-ENV LIVESTREAK_HOST_BIND_PORT=8787
+ENV LIVESTREAK_HOST_BIND_PORT=8788
 # The deploy snapshot lives under packages/contracts on the dev box; in prod the
 # operator supplies AA chains via LIVESTREAK_AA_CHAINS_FILE (or per-chain env), so
 # skip the localhost snapshot auto-load.
 ENV LIVESTREAK_AA_FROM_DEPLOY=0
-EXPOSE 8787
+EXPOSE 8788
 WORKDIR /repo/host
 CMD ["node", "dist/main.js"]

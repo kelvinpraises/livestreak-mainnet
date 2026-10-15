@@ -1,19 +1,8 @@
-// The CLI's floating, extensible chain layer.
-//
-// The CLI does NOT implement wallets — it INTERFACES @livestreak/wallet's createWalletManager. Each
-// chain contributes ONE ChainAdapter that knows how to (a) match its CAIP-2 namespace, (b) flatten its
-// deployment artifact into the canonical contracts bag, and (c) build the (floating) WalletInit that
-// the exported wallet manager consumes. Nothing chain-specific is baked into settings.json: the
-// contracts bag and the WalletInit are DERIVED here at load time from the deployment + host + rpc.
-//
-// Adding a chain (e.g. Solana) = add one adapter to `chainAdapters` and a WalletInit arm in
-// @livestreak/schema + a createWalletManager case in @livestreak/wallet. Zero edits to call sites.
+// Arc mainnet contracts and ERC-4337 wallet configuration for gateway roles.
 
 import type { ChainAaSettings, EvmWalletInitConfig, WalletChain, WalletInit } from "@livestreak/schema";
 import { DEFAULT_DEPLOYMENT, type DeploymentName } from "@livestreak/contracts/evm";
 import { loadDeploymentOutput } from "@livestreak/contracts/evm/node";
-import { loadDeployment as loadSuiDeployment } from "@livestreak/contracts/sui/node";
-import { loadDeploymentFromDisk as loadSolanaDeployment } from "@livestreak/contracts/solana/node";
 
 // What the registry needs to assemble a chain's runtime config. Everything here is a "float" — read
 // from settings.json or the host at load, never a pre-baked wallet/contracts blob.
@@ -21,7 +10,7 @@ export interface ChainBuildContext {
   readonly caip2: string;
   readonly rpc: string;
   readonly hostUrl: string;
-  /** Optional AA tuning (EVM only). Absent => the adapter defaults sponsored + standard host paths. */
+  /** Optional AA tuning (EVM only). Absent => self-paid operations through standard Host paths. */
   readonly aa?: ChainAaSettings;
   /** The derived contracts bag (from deriveContracts), passed in so buildWalletInit can read AA addrs. */
   readonly contracts: Readonly<Record<string, string>>;
@@ -30,7 +19,7 @@ export interface ChainBuildContext {
 export interface ChainAdapter {
   /** The @livestreak/wallet createWalletManager switch key. */
   readonly kind: WalletChain;
-  /** Does this adapter own the given CAIP-2 id? (e.g. eip155:* -> evm, sui:* -> sui). */
+  /** Does this adapter own the given CAIP-2 id? (Arc mainnet: eip155:5042). */
   matches(caip2: string): boolean;
   /** Flatten the chain's deployment artifact into the canonical Record<string,string> contracts bag. */
   deriveContracts(overrides?: Readonly<Record<string, string>>, deployment?: string, caip2?: string): Record<string, string>;
@@ -38,7 +27,6 @@ export interface ChainAdapter {
   buildWalletInit(ctx: ChainBuildContext): WalletInit;
 }
 
-const namespaceOf = (caip2: string): string => caip2.split(":")[0] ?? "";
 
 // --- EVM adapter (eip155:*) — Safe 4337 AA over the deployed ERC-4337 stack ---
 
@@ -46,7 +34,7 @@ const flattenEvmDeployment = (deployment?: string, caip2?: string): Record<strin
   const prefix = "@livestreak/contracts/evm/deployments/";
   if (deployment && !deployment.startsWith(prefix)) throw new Error(`Unsupported EVM deployment reference: ${deployment}`);
   const name = deployment?.slice(prefix.length) ?? DEFAULT_DEPLOYMENT;
-  if (name !== "localhost" && name !== "arbitrum-sepolia" && name !== "monad-testnet") throw new Error(`Unknown EVM deployment: ${name}`);
+  if (name !== "arc-mainnet") throw new Error(`Unknown EVM deployment: ${name}`);
   const snapshot = loadDeploymentOutput(name as DeploymentName);
   if (caip2 && caip2 !== `eip155:${snapshot.chainId}`) throw new Error(`Deployment ${name} belongs to eip155:${snapshot.chainId}, not ${caip2}`);
   // Read fresh from the promoted JSON at call time so a redeploy is picked up without a rebuild.
@@ -72,7 +60,7 @@ const flattenEvmDeployment = (deployment?: string, caip2?: string): Record<strin
     simulateTxAccessor: aa.simulateTxAccessor,
     marketRegistry: protocol.marketRegistry,
     vault: protocol.vault,
-    mockUsdc: protocol.mockUsdc,
+    usdc: protocol.usdc,
     lvstToken: protocol.lvstToken,
     treasury: protocol.treasury,
     stewardRegistry: protocol.stewardRegistry,
@@ -84,12 +72,12 @@ const flattenEvmDeployment = (deployment?: string, caip2?: string): Record<strin
 
 const evmChainAdapter: ChainAdapter = {
   kind: "evm",
-  matches: (caip2) => namespaceOf(caip2) === "eip155",
+  matches: (caip2) => caip2 === "eip155:5042",
   deriveContracts: (overrides, deployment, caip2) => ({ ...flattenEvmDeployment(deployment, caip2), ...(overrides ?? {}) }),
   buildWalletInit: (ctx) => {
     const chainId = Number(ctx.caip2.split(":")[1]);
     const hostBase = ctx.hostUrl.replace(/\/$/, "");
-    const isSponsored = ctx.aa?.isSponsored ?? true;
+    const isSponsored = ctx.aa?.isSponsored ?? false;
     const bundlerUrl = `${hostBase}${ctx.aa?.bundlerPath ?? "/aa/bundler/local"}`;
     const paymasterUrl = `${hostBase}${ctx.aa?.paymasterPath ?? "/aa/paymaster/local"}`;
     const c = ctx.contracts;
@@ -121,78 +109,11 @@ const evmChainAdapter: ChainAdapter = {
   }
 };
 
-// --- Sui adapter (sui:*) — Ed25519 native signing, no AA apparatus, just RPC ---
-
-const flattenSuiDeployment = (): Record<string, string> => {
-  // Read fresh from the promoted JSON at call time so a redeploy is picked up without a rebuild.
-  const d = loadSuiDeployment("localnet");
-  return {
-    ...d.objects,
-    packageId: d.packageId,
-    // observe's Sui market registrar consumes the registry as ONE JSON-encoded contract key
-    // (control.ts parses contracts.suiMarketRegistry -> { packageId, marketRegistryObjectId }).
-    suiMarketRegistry: JSON.stringify({
-      packageId: d.packageId,
-      marketRegistryObjectId: d.objects.marketRegistry
-    })
-  };
-};
-
-const suiChainAdapter: ChainAdapter = {
-  kind: "sui",
-  matches: (caip2) => namespaceOf(caip2) === "sui",
-  deriveContracts: (overrides) => ({ ...flattenSuiDeployment(), ...(overrides ?? {}) }),
-  buildWalletInit: (ctx) => ({
-    chain: "sui",
-    seedSource: "raw",
-    config: { rpcUrl: ctx.rpc }
-  })
-};
-
-// --- Solana adapter (solana:*) — Ed25519 native signing; sponsorship = Kora paymaster via the host ---
-
-const flattenSolanaDeployment = (): Record<string, string> => {
-  // Read fresh from the promoted JSON at call time so a redeploy is picked up without a rebuild.
-  const d = loadSolanaDeployment("localnet");
-  // Canonical per-package bag is { programId, usdcMint } (base58); registry/defaultSteward carried
-  // for convenience so a package can resolve PDAs without re-deriving.
-  return {
-    programId: d.programId,
-    usdcMint: d.accounts.usdcMint,
-    // The canonical LVST reward-token mint — the options loss-mint path (claimLossLvst) needs it.
-    lvstMint: d.accounts.lvstMint,
-    registry: d.accounts.registry,
-    defaultSteward: d.accounts.defaultSteward,
-    // observe's Solana market registrar consumes ONE JSON-encoded contract key
-    // (control.ts parses contracts.solanaMarketRegistry -> { programId, usdcMint }).
-    solanaMarketRegistry: JSON.stringify({
-      programId: d.programId,
-      usdcMint: d.accounts.usdcMint
-    })
-  };
-};
-
-const solanaChainAdapter: ChainAdapter = {
-  kind: "solana",
-  matches: (caip2) => namespaceOf(caip2) === "solana",
-  deriveContracts: (overrides) => ({ ...flattenSolanaDeployment(), ...(overrides ?? {}) }),
-  buildWalletInit: (ctx) => ({
-    chain: "solana",
-    seedSource: "raw",
-    // Native Ed25519 self-pay. Sponsorship threads in here as the paymaster triple — paymasterUrl =
-    // `${hostUrl}/aa/solana/paymaster`, paymasterAddress/token from the descriptor — once the gasless
-    // write path is consumed; the on-chain addresses above are already live for reads/PDA derivation.
-    config: { provider: ctx.rpc }
-  })
-};
-
 // --- the registry ---
 
 // Ordered; first matching adapter wins. Append new chains here.
 export const chainAdapters: readonly ChainAdapter[] = [
-  evmChainAdapter,
-  suiChainAdapter,
-  solanaChainAdapter
+  evmChainAdapter
 ];
 
 export const resolveChainAdapter = (caip2: string): ChainAdapter => {

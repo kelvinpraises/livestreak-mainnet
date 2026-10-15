@@ -31,7 +31,7 @@ try {
     const body = new TextDecoder().decode(await objects.get(key, 8 * 1024 * 1024));
     const state = JSON.parse(body);
     const expected = digest(new TextEncoder().encode(JSON.stringify([state.chain, state.marketId?.toLowerCase(), state.runId])));
-    if (key !== `recordings/${expected}.json` || state.id !== expected || !['evm','solana','sui'].includes(state.chain) || !/^0x[a-f0-9]{64}$/.test(state.marketId) || !Array.isArray(state.parts) || !['recording','processing','ready','failed'].includes(state.status)) throw new Error(`Invalid legacy recording: ${key}`);
+    if (key !== `recordings/${expected}.json` || state.id !== expected || !['evm'].includes(state.chain) || !/^0x[a-f0-9]{64}$/.test(state.marketId) || !Array.isArray(state.parts) || !['recording','processing','ready','failed'].includes(state.status)) throw new Error(`Invalid legacy recording: ${key}`);
     const marketKey = `recording-markets/${state.chain}/${state.marketId}.json`;
     const owned = [key];
     if (keys.has(marketKey)) {

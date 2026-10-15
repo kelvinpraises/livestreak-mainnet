@@ -19,7 +19,7 @@ export const createResolutionStore = (db: Kysely<DB>) => ({
     return row ? verifyResolutionRecord(JSON.parse(Buffer.from(row.body instanceof ArrayBuffer ? new Uint8Array(row.body) : row.body).toString('utf8')), digest) : undefined;
   },
   async list(chainId: string, vaultId: string) {
-    if (!/^(eip155|solana|sui):[^\s]{1,256}$/.test(chainId) || !vaultId.trim() || vaultId.length > 4096) throw new Error('Invalid resolution scope');
+    if (!/^eip155:5042$/.test(chainId) || !vaultId.trim() || vaultId.length > 4096) throw new Error('Invalid resolution scope');
     const rows = await db.selectFrom('resolution_records').select('digest')
       .where('chain_id', '=', chainId).where('vault_id', '=', vaultId)
       .orderBy(sql`rowid`, 'desc').limit(20).execute();

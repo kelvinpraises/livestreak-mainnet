@@ -37,11 +37,6 @@ EVM bundler calls go to the configured `bundlerUrl`; optional hosted paymaster c
 Public sponsorship requires Host authorization. Provider gas policy and budget are separate
 from Host authentication.
 
-Solana currently uses the Host's native fee-payer key behind its existing Kora-compatible
-wire protocol. That protocol remains because existing SDK wallets call it; it does not run
-a Kora server. ZeroDev's Solana sponsorship protocol is different and is not yet wired here.
-Sui uses a funded native sponsor and the existing gas-coin reservation pool.
-
 Media policy sessions are metadata, not live broadcasts. Their manifests contain no playback
 endpoints until a real provider supplies them. Simulcast is unavailable; a key cannot enable an
 unimplemented provider. Live video uses `/live` HTTP/WS paths. Archived playback uses `/recordings`.
@@ -49,25 +44,13 @@ Manifests and cache receipts remain explicitly unsigned, and do not prove storag
 
 ## Development and verification
 
-Public testnets are the intended integration environment. The root `dev.sh` and app still
-contain local-chain assumptions; they have not yet been migrated. Host cleanup alone is not
-proof of a complete public-testnet journey.
+Use Node 22. `dev.sh` starts the app on port 3001 and Host on port 8788, targeting
+Arc mainnet without deploying, minting or sending automatic transactions.
+Configure dedicated Turso and S3-compatible storage credentials in the mainnet checkout.
+No populated database or credentials are inherited from another edition.
 
-Configure explicit deployment paths and separate database/storage resources before using
-public testnets. Do not point testnet readers at local deployment snapshots. The database uses Kysely over remote libSQL/Turso. Configure `TURSO_DATABASE_URL`
-(or `DATABASE_URL`) and `TURSO_AUTH_TOKEN`; there is no local file default or replica.
-
-Use Node 22 for the workspace and test-only native SQLite binding:
-
-```sh
-npm run check --workspace=host
-npm test --workspace=host
-npm run build --workspace=host
-```
-
-See [catalog-index.md](./catalog-index.md), [storage.md](./storage.md), and
-[remote-console.md](./remote-console.md). Old build plans and local-stack instructions were
-archived under `context/archive/host-before-testnet-cleanup-2026-10-04`.
+Run the Host workspace's check, test, and build scripts. These offline checks do not
+prove that the public deployment or a real-money lifecycle is ready.
 
 ## State ownership
 
@@ -78,31 +61,8 @@ only the dependencies they read. Session draft and summary share one keyed recor
 mutate stored manifests by holding an input reference. Catalog projection resets and the cached
 process-wide AA deployment snapshot were removed.
 
-AA has one configuration owner (`config/aa.ts`, with explicit snapshots in `config/deployment.ts`) and one implementation per chain (`evm.ts`,
-`sui.ts`, `solana.ts`). Revert decoding stays separate because it is a self-contained codec.
-The baseline migration and separate WS transports remain explicit boundaries.
-
-## Active target: Arbitrum Sepolia
-
-Arbitrum Sepolia is chain **421614**, RPC `https://sepolia-rollup.arbitrum.io/rpc`.
-The ZeroDev example uses `ZERODEV_ARBITRUM_SEPOLIA_RPC_URL` for bundling and sponsorship.
-The supplied project returned `eth_chainId = 0x66eee`; sponsored execution is not yet proven.
-
-The demo uses our own permissionless six-decimal MockUSDC again. Its token address comes
-from the protocol deployment snapshot for this network; no Paxos token or supply-control
-address is used. Browser mint requests use the connected wallet and confirmed transactions.
-
-The app imports `arbitrumSepoliaDeployment` from `@livestreak/contracts/evm`. Host and CLI
-load its JSON through the package Node loader; Host can override the snapshot path with
-`LIVESTREAK_DEPLOY_SNAPSHOT`. CLI checks deployment/CAIP-2 agreement before using addresses.
-The Arbitrum deployment is recorded in
-`packages/contracts/chains/evm/deployments/arbitrum-sepolia.json`. Our test USDC is
-`0x76bb00aa1936dd7cda6df2fa403f1439e3db456a`. All four scopes (AA, streaming, protocol,
-wire) completed; the retired paymaster is omitted. Do not reuse the bundled localhost addresses.
-This deployment does not establish hosted sponsorship or the complete browser funding journey.
-Sui is paused in the app picker, saved-selection restoration and direct chain selection, while its
-implementation and tests remain. Solana's existing integration is unchanged.
-
-Mandates and resolution records use the same Kysely connection as indexing, memory and forum.
-Boot applies versioned migrations before scheduling indexing. Only isolated unit tests can
-request an in-memory database; persistent SQLite is a test fixture, not a runtime backend.
+AA configuration belongs to `config/aa.ts`, with deployment facts loaded by
+`config/deployment.ts`. `features/aa/evm.ts` forwards provider requests.
+The only supported production chain is Arc mainnet (5042). Its deployed contract
+snapshot is loaded from the contracts package. Sponsorship is unavailable unless
+an upstream paymaster is configured and authorization permits it.

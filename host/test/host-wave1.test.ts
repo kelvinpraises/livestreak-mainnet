@@ -40,7 +40,7 @@ describe("H5 — per-chain paymasterPath", () => {
       saved[key] = process.env[key];
     }
     process.env.LIVESTREAK_AA_RPC_URL = "http://127.0.0.1:8545";
-    process.env.LIVESTREAK_AA_CHAIN_ID = "31337";
+    process.env.LIVESTREAK_AA_CHAIN_ID = "5042";
   });
 
   afterEach(() => {
@@ -82,10 +82,10 @@ describe("H1 — loopback-gated dev_open sponsorship", () => {
     }
   });
 
-  it("uses dev_open + no auth on a loopback bind", () => {
+  it("does not advertise sponsorship without an upstream paymaster", () => {
     delete process.env.LIVESTREAK_AA_PAYMASTER_AUTH_TOKEN;
     const aa = readAaServerConfig({ ...defaultHostServerConfig(), bindHost: "127.0.0.1" });
-    expect(aa.sponsorshipMode).toBe("dev_open");
+    expect(aa.sponsorshipMode).toBe("none");
     expect(aa.requirePaymasterAuth).toBe(false);
   });
 
@@ -100,7 +100,7 @@ describe("H1 — loopback-gated dev_open sponsorship", () => {
     process.env.LIVESTREAK_AA_PAYMASTER_AUTH_TOKEN = "secret-token";
     const config = { ...defaultHostServerConfig(), bindHost: "0.0.0.0" };
     const aa = readAaServerConfig(config);
-    expect(aa.sponsorshipMode).toBe("paymaster_signed");
+    expect(aa.sponsorshipMode).toBe("none");
     expect(aa.requirePaymasterAuth).toBe(true);
 
     const deps = createAaRouteDeps(config);

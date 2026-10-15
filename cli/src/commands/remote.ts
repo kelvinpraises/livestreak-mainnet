@@ -57,7 +57,7 @@ const deriveHostWss = (hostUrl: string, sessionId: string, override?: string): s
 };
 
 const resolveAppOrigin = (override?: string): string =>
-  (override ?? process.env["LIVESTREAK_APP_ORIGIN"] ?? "http://localhost:3000").replace(
+  (override ?? process.env["LIVESTREAK_APP_ORIGIN"] ?? "http://localhost:3001").replace(
     /\/$/,
     "",
   );
@@ -534,7 +534,7 @@ const spendCapOpt = Options.text("spend-cap").pipe(Options.optional);
 const hostWssOpt = Options.text("host-wss").pipe(Options.optional);
 const appOriginOpt = Options.text("app-origin").pipe(
   Options.withDescription(
-    "App origin for the printed remote console URL (default http://localhost:3000)",
+    "App origin for the printed remote console URL (default http://localhost:3001)",
   ),
   Options.optional,
 );

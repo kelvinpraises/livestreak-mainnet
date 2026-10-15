@@ -168,9 +168,9 @@ describe("catalog service", () => {
       seedMarkets: [{ chain: "evm", marketId: "m1" }]
     });
     service.registerMarket({ chain: "evm", marketId: "m1" });
-    service.registerMarket({ chain: "sui", marketId: "m1" });
+    service.registerMarket({ chain: "evm", marketId: "m1" });
     expect(service.knownMarkets()).toEqual([
-      { chain: "evm", marketId: "m1" }, { chain: "sui", marketId: "m1" }
+      { chain: "evm", marketId: "m1" }
     ]);
   });
 

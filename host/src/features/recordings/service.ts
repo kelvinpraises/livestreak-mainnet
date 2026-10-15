@@ -34,7 +34,7 @@ const validScope = (s: RecordingScope): void => {
     !s ||
     typeof s !== "object" ||
     typeof s.runId !== "string" ||
-    !["evm", "solana", "sui"].includes(s.chain) ||
+    !["evm"].includes(s.chain) ||
     !/^0x[a-fA-F0-9]{64}$/.test(s.marketId) ||
     !s.runId ||
     s.runId.length > 256
@@ -242,7 +242,7 @@ export const createRecordingService = (
       return state ? receipt(state) : null;
     },
     async forMarket(chain, marketId) {
-      if (!["evm", "solana", "sui"].includes(chain) || !/^0x[a-f0-9]{64}$/i.test(marketId))
+      if (!["evm"].includes(chain) || !/^0x[a-f0-9]{64}$/i.test(marketId))
         throw new Error("Invalid recording market");
       const binding = await db.selectFrom("recordings").select("id").where(scoped).where("chain", "=", chain).where("market_id", "=", marketId.toLowerCase()).executeTakeFirst();
       const state = binding ? await load(binding.id) : null;

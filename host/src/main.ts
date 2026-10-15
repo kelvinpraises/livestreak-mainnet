@@ -6,7 +6,7 @@ import { attachRemoteWss } from "./features/remote/transport.js";
 import { bootstrapHostServer } from "./server.js";
 
 /**
- * LiveStreak host dev server — HTTP on :8787 with AA (hosted bundler proxy + sponsorship).
+ * LiveStreak host dev server — HTTP on :8788 with AA (hosted bundler proxy + sponsorship).
  *
  * Configure hosted AA endpoints and deployed chain snapshots before enabling chain writes.
  *

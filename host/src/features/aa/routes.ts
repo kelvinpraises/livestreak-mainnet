@@ -1,18 +1,14 @@
 import type {
   AaCapabilityDescriptor,
   AaChainDescriptor,
-  SolanaSponsorshipDescriptor,
-  SuiSponsorshipDescriptor
 } from "@livestreak/host";
-import type { NextFunction, Request, Response } from "express";
 import { Router } from "express";
 import type { Hex } from "viem";
 import type { AaChainConfig } from "../../config/aa.js";
 import { resolveAaChain } from "../../config/aa.js";
 import type { AaRouteDeps } from "../../deps.js";
-import { asyncHandler, sendRouteResult } from "../../http/respond.js";
+import { asyncHandler } from "../../http/respond.js";
 import { proxyBundlerRpc, proxyPaymasterRpc } from "./evm.js";
-import { handleSuiSponsor } from "./sui.js";
 
 // --- exports ---
 
@@ -29,15 +25,6 @@ export const createAaRouter = (deps: AaRouteDeps): Router => {
     "/aa/paymaster/:chain",
     asyncHandler(async (req, res) => handlers.paymaster(req, res))
   );
-  router.post(
-    "/aa/sui/sponsor",
-    asyncHandler(async (req, res, next) => handlers.suiSponsor(req, res, next))
-  );
-  router.post(
-    "/aa/solana/paymaster",
-    asyncHandler(async (req, res) => handlers.solanaPaymaster(req, res))
-  );
-
   return router;
 };
 
@@ -115,57 +102,7 @@ export const createAaHandlers = (deps: AaRouteDeps) => ({
       `Paymaster not available for chain: ${routeKey}`, request.id));
   },
 
-  suiSponsor: async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    if (!deps.suiGasStation.configured) {
-      res.status(503).json({
-        error: {
-          message: "Sui gas station is not configured",
-          metadata: { retryable: false }
-        }
-      });
-      return;
-    }
 
-    sendRouteResult(
-      res,
-      await handleSuiSponsor(req.body, {
-        sponsor: (input) => deps.suiGasStation.sponsor(input)
-      }),
-      next
-    );
-  },
-
-  solanaPaymaster: async (
-    req: { body: unknown; headers?: Record<string, unknown> },
-    res: { status: (code: number) => { json: (body: unknown) => void } }
-  ): Promise<void> => {
-    const request = asJsonRpcRequest(req.body);
-
-    if (!deps.solanaPaymaster.configured) {
-      res
-        .status(503)
-        .json(jsonRpcError(-32000, "Solana paymaster is not configured", request.id));
-      return;
-    }
-
-    // Same H1 drain-protection as the EVM paymaster: open sponsorship is loopback-only;
-    // a non-loopback bind requires the bearer token before the host co-signs anything.
-    if (deps.aa.requirePaymasterAuth) {
-      if (deps.aa.paymasterAuthToken === undefined) {
-        res
-          .status(503)
-          .json(jsonRpcError(-32000, "Paymaster sponsorship is disabled on this host", request.id));
-        return;
-      }
-      if (!hasValidBearer(req.headers, deps.aa.paymasterAuthToken)) {
-        res.status(401).json(jsonRpcError(-32001, "Paymaster authorization required", request.id));
-        return;
-      }
-    }
-
-    const result = await deps.solanaPaymaster.handleRpc(req.body);
-    res.status(result.status).json(result.body);
-  }
 });
 
 // Host-local emit types: a superset of the canonical descriptor that adds a
@@ -198,48 +135,8 @@ const buildAaDescriptor = (deps: AaRouteDeps): AaCapabilityDescriptorEmit => ({
     paymasterPath: `/aa/paymaster/${chain.routeKey}`,
     rpcUrl: chain.rpcUrl
   })),
-  ...(buildSuiSponsorshipDescriptor(deps) === undefined
-    ? {}
-    : { suiSponsorship: buildSuiSponsorshipDescriptor(deps) }),
-  ...(buildSolanaSponsorshipDescriptor(deps) === undefined
-    ? {}
-    : { solanaSponsorship: buildSolanaSponsorshipDescriptor(deps) })
+
 });
-
-const buildSuiSponsorshipDescriptor = (deps: AaRouteDeps): SuiSponsorshipDescriptor | undefined => {
-  if (!deps.suiGasStation.configured || !deps.suiGasStation.advertise) {
-    return undefined;
-  }
-
-  return {
-    gasStationPath: deps.suiGasStation.gasStationPath,
-    ...(deps.suiGasStation.sponsorAddress === null
-      ? {}
-      : { sponsorAddress: deps.suiGasStation.sponsorAddress })
-  };
-};
-
-const buildSolanaSponsorshipDescriptor = (
-  deps: AaRouteDeps
-): SolanaSponsorshipDescriptor | undefined => {
-  if (!deps.solanaPaymaster.configured || !deps.solanaPaymaster.advertise) {
-    return undefined;
-  }
-
-  return {
-    paymasterPath: deps.solanaPaymaster.paymasterPath,
-    ...(deps.solanaPaymaster.payerAddress === null
-      ? {}
-      : { payerAddress: deps.solanaPaymaster.payerAddress }),
-    // Token-free by default: payerAddress + rpcUrl is all the app needs (solanaWalletInitFromDescriptor
-    // sponsors on the payer alone, no fee token). feeTokens is advertised ONLY when explicitly set
-    // (LIVESTREAK_SOLANA_FEE_TOKENS) to opt into the legacy Kora fee-token flow; omitted when empty.
-    ...(deps.solanaPaymaster.feeTokens.length === 0
-      ? {}
-      : { feeTokens: [...deps.solanaPaymaster.feeTokens] }),
-    ...(deps.solanaPaymaster.rpcUrl === null ? {} : { rpcUrl: deps.solanaPaymaster.rpcUrl })
-  };
-};
 
 interface JsonRpcRequestBody {
   readonly jsonrpc?: string;

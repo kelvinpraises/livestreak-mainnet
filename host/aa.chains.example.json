@@ -1,11 +1,11 @@
 [
   {
-    "routeKey": "monad-testnet",
-    "chainId": 10143,
-    "name": "Monad Testnet",
+    "routeKey": "arc-mainnet",
+    "chainId": 5042,
+    "name": "Arc",
     "entryPoint": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
-    "rpcUrl": "https://testnet-rpc.monad.xyz",
-    "bundlerUrlEnv": "ZERODEV_MONAD_TESTNET_RPC_URL",
-    "paymasterUrlEnv": "ZERODEV_MONAD_TESTNET_RPC_URL"
+    "rpcUrl": "https://rpc.blockdaemon.mainnet.arc.io",
+    "bundlerUrlEnv": "ZERODEV_ARC_RPC_URL",
+    "paymasterUrlEnv": "ZERODEV_ARC_RPC_URL"
   }
 ]

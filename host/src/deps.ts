@@ -1,5 +1,3 @@
-import type { SuiGasCoinRef } from "@livestreak/wallet";
-import { SuiJsonRpcClient } from "@mysten/sui/jsonRpc";
 import {
   readAaServerConfig,
   type AaServerConfig,
@@ -16,16 +14,6 @@ import {
   migrateToLatest,
   migrateSync,
 } from "./database/migrations/index.js";
-import {
-  createSolanaPaymaster,
-  readSolanaPaymasterRuntimeConfig,
-  type SolanaPaymasterService,
-} from "./features/aa/solana.js";
-import {
-  createSuiGasStation,
-  readSuiGasStationRuntimeConfig,
-  type SuiGasStationService,
-} from "./features/aa/sui.js";
 import {
   createCatalogService,
   type CatalogReaderProvider,
@@ -70,56 +58,14 @@ export type { ForumRouteDeps,MemoryRouteDeps };
 export interface AaRouteDeps {
   readonly config: HostServerConfig;
   readonly aa: AaServerConfig;
-  readonly suiGasStation: SuiGasStationService;
-  readonly solanaPaymaster: SolanaPaymasterService;
 }
 
-export interface CreateAaRouteDepsOptions {
-  readonly suiGasStation?: SuiGasStationService;
-  readonly suiClient?: SuiJsonRpcClient;
-  readonly suiInitialCoins?: readonly SuiGasCoinRef[];
-  readonly solanaPaymaster?: SolanaPaymasterService;
-}
+export const createAaRouteDeps = (config: HostServerConfig): AaRouteDeps => ({
+  config,
+  aa: readAaServerConfig(config, loadDefaultDeploySnapshotConfig())
+});
 
-export const createAaRouteDeps = (
-  config: HostServerConfig,
-  options: CreateAaRouteDepsOptions = {},
-): AaRouteDeps => {
-  const aa = readAaServerConfig(config, loadDefaultDeploySnapshotConfig());
-  return {
-    config,
-    aa,
-    suiGasStation: options.suiGasStation ?? createSuiGasStation({ config: null }),
-    solanaPaymaster: options.solanaPaymaster ?? createSolanaPaymaster({ config: null }),
-  };
-};
-
-export const bootstrapAaRouteDeps = async (
-  config: HostServerConfig,
-  options: CreateAaRouteDepsOptions = {},
-): Promise<AaRouteDeps> => {
-  const suiGasStation = await buildSuiGasStation(config, options);
-  const solanaPaymaster = await buildSolanaPaymaster(config, options);
-  const deps = createAaRouteDeps(config, { ...options, suiGasStation, solanaPaymaster });
-
-  if (deps.suiGasStation.configured) {
-    try {
-      await deps.suiGasStation.bootstrap();
-    } catch (error) {
-      console.warn(`[aa]: Sui gas station bootstrap skipped: ${String(error)}`);
-    }
-  }
-
-  if (deps.solanaPaymaster.configured) {
-    try {
-      await deps.solanaPaymaster.bootstrap();
-    } catch (error) {
-      console.warn(`[aa]: Solana paymaster bootstrap skipped: ${String(error)}`);
-    }
-  }
-
-  return deps;
-};
+export const bootstrapAaRouteDeps = async (config: HostServerConfig): Promise<AaRouteDeps> => createAaRouteDeps(config);
 
 export const bootstrapHostRouteDeps = async (
   config: HostServerConfig = defaultHostServerConfig(),
@@ -129,7 +75,7 @@ export const bootstrapHostRouteDeps = async (
     ? (config.storage === null ? null : createS3ObjectStore(config.storage))
     : options.objectStore;
   await objects?.check?.();
-  const aa = options.aa ?? await bootstrapAaRouteDeps(config, options);
+  const aa = options.aa ?? await bootstrapAaRouteDeps(config);
   const deps = createHostRouteDeps(config, { ...options, objectStore: objects, aa, cronEnabled: false });
   try {
     await migrateToLatest(deps.catalogDb.db);
@@ -187,7 +133,7 @@ export interface ContentRouteDeps {
   readonly store: ReturnType<typeof createContentStore>;
 }
 
-export interface CreateHostRouteDepsOptions extends CreateAaRouteDepsOptions {
+export interface CreateHostRouteDepsOptions {
   readonly aa?: AaRouteDeps;
   readonly objectStore?: ObjectStore | null;
   // Inject a reader provider in tests; defaults to the env/deploy-snapshot provider.
@@ -218,8 +164,6 @@ const buildCatalogStack = (
     defaultChain:
       (process.env.LIVESTREAK_CATALOG_DEFAULT_CHAIN as
         | "evm"
-        | "sui"
-        | "solana"
         | undefined) ?? "evm",
     listDiscoveryMarketIds: () => store.listMarketIds(),
     seedMarkets: parseSeedMarkets(process.env.LIVESTREAK_CATALOG_MARKETS),
@@ -283,7 +227,7 @@ export const createHostRouteDeps = (
     recordings,
     memory: { db: catalogStack.catalogDb.db },
     forum: { db: catalogStack.catalogDb.db },
-    aa: options.aa ?? createAaRouteDeps(config, options),
+    aa: options.aa ?? createAaRouteDeps(config),
     remote: buildRemoteService(config),
     ...catalogStack,
     live,
@@ -300,61 +244,3 @@ const buildRemoteService = (config: HostServerConfig): RemoteService =>
     grantKeyHex: config.remoteGrantKeyHex,
     grantKeyId: `${config.hostId}_grant`,
   });
-
-const buildSolanaPaymaster = async (
-  config: HostServerConfig,
-  options: CreateAaRouteDepsOptions,
-): Promise<SolanaPaymasterService> => {
-  if (options.solanaPaymaster !== undefined) {
-    return options.solanaPaymaster;
-  }
-
-  const runtime = await readSolanaPaymasterRuntimeConfig(config).catch(() => null);
-  if (runtime === null) {
-    return createSolanaPaymaster({ config: null });
-  }
-
-  return createSolanaPaymaster({ config: runtime });
-};
-
-const buildSuiGasStation = async (
-  config: HostServerConfig,
-  options: CreateAaRouteDepsOptions,
-): Promise<SuiGasStationService> => {
-  if (options.suiGasStation !== undefined) {
-    return options.suiGasStation;
-  }
-
-  const runtime = await readSuiGasStationRuntimeConfig(config).catch(() => null);
-  if (runtime === null) {
-    return createSuiGasStation({ config: null });
-  }
-
-  const client =
-    options.suiClient ??
-    new SuiJsonRpcClient({
-      url: runtime.rpcUrl,
-      network: readSuiNetwork(),
-    });
-  return createSuiGasStation({
-    config: runtime,
-    client,
-    ...(options.suiInitialCoins === undefined
-      ? {}
-      : { initialCoins: options.suiInitialCoins }),
-  });
-};
-
-const readSuiNetwork = (): "mainnet" | "testnet" | "devnet" | "localnet" => {
-  const value = process.env.LIVESTREAK_SUI_NETWORK ?? "testnet";
-  if (
-    value === "mainnet" ||
-    value === "testnet" ||
-    value === "devnet" ||
-    value === "localnet"
-  ) {
-    return value;
-  }
-
-  throw new Error("Invalid LIVESTREAK_SUI_NETWORK");
-};

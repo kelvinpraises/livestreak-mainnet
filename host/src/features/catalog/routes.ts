@@ -27,7 +27,7 @@ export const createCatalogRouter = (deps: Pick<HostRouteDeps, "catalog" | "catal
 const parseMarketRef = (body: unknown): CatalogMarketRef | null => {
   if (body === null || typeof body !== "object") return null;
   const { chain, marketId } = body as { chain?: unknown; marketId?: unknown };
-  if ((chain !== "evm" && chain !== "sui" && chain !== "solana") || typeof marketId !== "string") return null;
+  if (chain !== "evm" || typeof marketId !== "string") return null;
   if (marketId.trim().length === 0) return null;
   return { chain, marketId: marketId.trim() };
 };
@@ -58,7 +58,7 @@ export const createCatalogHandlers = (deps: Pick<HostRouteDeps, "catalog" | "cat
           ok: false,
           status: 400,
           error: new LiveStreakConfigError({
-            message: "catalog market requires { chain: 'evm'|'sui'|'solana', marketId }",
+            message: "catalog market requires { chain: 'evm', marketId }",
             metadata: { retryable: false }
           })
         },
@@ -91,8 +91,8 @@ export const createPagesRouter = (deps: Pick<HostRouteDeps, "catalogIndexer" | "
 // Omission means all chains; an invalid scope must never silently broaden a request.
 const parseChainParam = (raw: unknown): ChainTag | undefined => {
   if (raw === undefined) return undefined;
-  if (raw === "evm" || raw === "sui" || raw === "solana") return raw;
-  throw new LiveStreakConfigError({ message: "Invalid chain; expected evm, sui or solana", metadata: { retryable: false } });
+  if (raw === "evm") return raw;
+  throw new LiveStreakConfigError({ message: "Invalid chain; expected evm for Arc", metadata: { retryable: false } });
 };
 
 // Page-shaped discovery endpoints: ONE response shape per page, served from the DB
@@ -100,7 +100,7 @@ const parseChainParam = (raw: unknown): ChainTag | undefined => {
 // fetches a page projection. Account balances/positions/actions remain the options SDK's.
 
 export const createPagesHandlers = (deps: Pick<HostRouteDeps, "catalogIndexer" | "catalogReadModel" | "config" | "recordings">) => ({
-  // GET /homepage[?chain=evm|sui] -> HomepageData { streams, liveVaults, lifetimeVaults, protocolStats }.
+  // GET /homepage[?chain=evm] -> HomepageData { streams, liveVaults, lifetimeVaults, protocolStats }.
   homepage: asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     await deps.catalogIndexer.ensureAll();
     const chain = parseChainParam(req.query.chain);

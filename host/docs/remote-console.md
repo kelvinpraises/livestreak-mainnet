@@ -40,12 +40,8 @@ or `bridge:action:*` (all). The depth-guarded matcher in `@livestreak/schema/cap
 ## Stand up the channel
 
 ```bash
-./dev.sh                        # the WHOLE protocol live: anvil + Sui + contracts (deployed AND wired)
-                                # + host + app + a remote console PER package-role; prints each
-                                # /remote/<code> URL + pairing pass (demo-pass-<role>).
-                                # Flip chains by config alone:  CHAIN=sui ./dev.sh
-# browser: open a printed role console URL and enter its pairing pass.
-#
+./dev.sh  # Arc app and Host only; does not deploy or open role sessions automatically.
+# Configure a mainnet keystore and the provider endpoints before opening a role.
 # To open an extra ad-hoc console by hand (own keystore + scopes):
 cd cli && npm run dev -- remote open --scopes bridge:action:fund --ttl 10m
 #   → prints: pairing code, pairing pass, the /remote/<code> URL after the host ack

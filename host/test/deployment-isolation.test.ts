@@ -21,14 +21,14 @@ it('keeps identical EVM IDs on two deployments distinct in the homepage and stre
     stream_scheme: '', ended_at_ms: null, status: 'none', is_live: 0, watch_url: null, active_vaults: 0,
     total_pooled: 0, from_ms: 100, updated_at: Date.now() };
   await db.insertInto('markets').values([
-    { ...row, deployment_scope: 'eip155:421614:registry', title: 'Arbitrum history' },
-    { ...row, deployment_scope: 'eip155:10143:registry', title: 'Monad stream' },
+    { ...row, deployment_scope: 'eip155:5042:old-registry', title: 'Previous deployment' },
+    { ...row, deployment_scope: 'eip155:5042:current-registry', title: 'Arc stream' },
     { ...row, deployment_scope: '', title: 'Unattributed legacy history' },
   ]).execute();
-  const view = createCatalogReadModel({ db, deploymentScopes: { evm: 'eip155:10143:registry' } });
+  const view = createCatalogReadModel({ db, deploymentScopes: { evm: 'eip155:5042:current-registry' } });
   const homepage = await view.homepage();
-  expect(homepage.streams.map(stream => stream.title)).toEqual(['Monad stream']);
-  expect((await view.stream(marketId, 'evm'))?.title).toBe('Monad stream');
+  expect(homepage.streams.map(stream => stream.title)).toEqual(['Arc stream']);
+  expect((await view.stream(marketId, 'evm'))?.title).toBe('Arc stream');
   expect(await db.selectFrom('markets').selectAll().execute()).toHaveLength(3);
 });
 
@@ -36,8 +36,8 @@ it('binds recording identities and lookup to the deployment without overwriting 
   const { db } = database();
   const store = testObjectStore();
   const scope = { chain: 'evm' as const, marketId, runId: 'same-observation' };
-  const old = createRecordingService(store, 'secret', db, { evm: 'eip155:421614:registry' });
-  const current = createRecordingService(store, 'secret', db, { evm: 'eip155:10143:registry' });
+  const old = createRecordingService(store, 'secret', db, { evm: 'eip155:5042:old-registry' });
+  const current = createRecordingService(store, 'secret', db, { evm: 'eip155:5042:current-registry' });
   const oldRecord = await old.begin(scope);
   expect(await current.forMarket('evm', marketId)).toBeNull();
   expect(await current.byId(oldRecord.id)).toBeNull();

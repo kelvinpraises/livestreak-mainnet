@@ -44,7 +44,9 @@ export const readAaServerConfig = (
   // H1 posture: `dev_open` (open sponsorship) is only safe on a loopback bind.
   // On any public/non-loopback bind we require a bearer token; the advertised
   // sponsorship mode reflects whether sponsorship is even available.
-  const sponsorshipMode: AaSponsorshipMode = loopback
+  const sponsorshipMode: AaSponsorshipMode = !chains.some(chain => chain.paymasterUrl)
+    ? "none"
+    : loopback
     ? "dev_open"
     : authToken === undefined
       ? "none"
@@ -111,7 +113,7 @@ const buildEnvChain = (snapshot: DeploySnapshotConfig): AaChainConfig | null => 
   return {
     routeKey: "local",
     chainId,
-    name: chainId === 10143 ? "Monad Testnet" : chainId === 421614 ? "Arbitrum Sepolia" : `EVM ${chainId}`,
+    name: "Arc",
     entryPoint,
     ...(safeModule === undefined ? {} : { safeModule }),
     bundlerUrl: process.env.LIVESTREAK_AA_BUNDLER_URL,
@@ -120,13 +122,13 @@ const buildEnvChain = (snapshot: DeploySnapshotConfig): AaChainConfig | null => 
   };
 };
 
-// ENV > explicit snapshot > Monad testnet.
+// ENV > explicit Arc snapshot > Arc mainnet.
 const resolveChainId = (snapshotChainId: number | undefined): number => {
   const envValue = readEnv("LIVESTREAK_AA_CHAIN_ID");
   if (envValue !== undefined) {
-    return Number.parseInt(envValue, 10);
+    return assertArcChain(Number(envValue));
   }
-  return snapshotChainId ?? 10143;
+  return assertArcChain(snapshotChainId ?? 5042);
 };
 
 const mergeChains = (
@@ -195,6 +197,11 @@ export const readChainsFromFile = (filePath: string): AaChainConfig[] => {
 
 // --- helpers ---
 
+const assertArcChain = (chainId: number): number => {
+  if (chainId !== 5042) throw new Error("Only Arc mainnet chain 5042 is supported");
+  return chainId;
+};
+
 const HEX_ADDRESS = /^0x[a-fA-F0-9]{40}$/u;
 
 const parseChainEntry = (entry: unknown, index: number): AaChainConfig => {
@@ -204,7 +211,7 @@ const parseChainEntry = (entry: unknown, index: number): AaChainConfig => {
 
   const record = entry as AaChainFileEntry;
   const routeKey = requireString(record.routeKey, `aa_chains_file_entry_${index}_routeKey`);
-  const chainId = requireNumber(record.chainId, `aa_chains_file_entry_${index}_chainId`);
+  const chainId = assertArcChain(requireNumber(record.chainId, `aa_chains_file_entry_${index}_chainId`));
   const name = requireString(record.name, `aa_chains_file_entry_${index}_name`);
   const entryPoint = requireHexAddress(record.entryPoint, `aa_chains_file_entry_${index}_entryPoint`);
 

@@ -202,7 +202,7 @@ Viewer and Steward sessions independently call `readMandate` with `{ vaultId }`.
 
 The drive API accepts explicit `mandate` or `mandateForMarket(marketId)` plus `operationId`; it does not infer judgement from the stream title. The CLI drive accepts `--mandate-file` and `--operation-id` for explicit terms bound to the intended market. For the demonstrated four-role live-media path use [the RTMP integration example](../../examples/rtmp-broadcaster/README.md). Its Viewer/Steward credentials are test orchestration, not production bot permissions.
 
-Support is local EVM with the Flow03 contract/ABI version. Contract/ABI source commits remain held by the user; this SDK packet alone is not a deployable feature release. Legacy EVM and unsupported Solana/Sui bound writes never fall back to question-only vaults. Resolution, payout and public Solana remain later flows.
+This edition targets the canonical Arc 5042 contracts. Bound writes require committed mandate terms. Verify the live Host, bundler and real-USDC lifecycle before release.
 
 ## Evidence-backed resolution (Flow 05)
 

@@ -4,14 +4,8 @@ name: CI
 # fail-fast: build the workspace dist chain in dependency order, then typecheck and
 # run the vitest suites for every package + cli + app.
 #
-# NOT covered here (intentionally): the on-chain contract suites — `sui move test`
-# (needs the Sui CLI toolchain) and `forge test` (needs Foundry). Both require extra
-# runner setup that isn't trivial, and neither runs offline against npm alone, so they
-# stay out of this lane. Run them locally / in a dedicated chain-CI:
-#   packages/contracts: `sui move test --build-env testnet` (chains/sui)
-#                       `forge test`                        (chains/evm)
-# The contracts package is still typechecked and DIST-built here (its ts bindings),
-# just not its Solidity/Move test suites.
+# Solidity tests require Foundry and run separately. This job checks TypeScript
+# bindings and the offline workspace suites using Node 22.
 
 on:
   pull_request: {}

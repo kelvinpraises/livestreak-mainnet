@@ -1,12 +1,12 @@
 # Catalog index scope and freshness
 
-The Host polls configured chain deployments, atomically stores complete market/vault/resolution graphs, and serves discovery from one transactional Turso/libSQL projection. `/catalog`, `/catalog/full`, `/homepage`, `/stream/:id` and its catalog alias share that projection. IDs are chain-qualified; ambiguous detail routes require `?chain=evm|sui|solana`.
+The Host polls configured chain deployments, atomically stores complete market/vault/resolution graphs, and serves discovery from one transactional Turso/libSQL projection. `/catalog`, `/catalog/full`, `/homepage`, `/stream/:id` and its catalog alias share that projection. IDs are chain-qualified; ambiguous detail routes require `?chain=evm`.
 
 ## Configuration
 
-Set `LIVESTREAK_CATALOG_CHAINS=evm,sui,solana` to index all three chain families, or a comma-separated subset. An unset value defaults to `evm`. Invalid/empty values fail startup. Deployment files alone do not activate a chain. An explicitly selected chain with a missing reader or failing RPC remains a visible coverage failure. The local `dev.sh` passes the chains it actually started successfully.
-
-Disabled-chain cache remains stored but is excluded from discovery and totals. This is chain selection, not network isolation: separate local/testnet databases, buckets, deployment identities and resets still need enforcement.
+This edition indexes only Arc mainnet. `LIVESTREAK_CATALOG_CHAINS` defaults to `evm`;
+unsupported values fail startup. The reader verifies chain ID 5042 and scopes persisted
+records to the canonical Arc registry. Use dedicated database and storage resources.
 
 ## Response semantics
 
@@ -22,7 +22,7 @@ A registry scan failure does not invalidate an independently refreshed market gr
 
 ## Verification and limits
 
-Regression tests cover mixed-chain outage/recovery, failed registry scans with readable known markets, healthy empty scopes, disabled cache, failed child reads, overlapping refresh, migration preservation, chain ID collisions and consistent public endpoints. App tests cover totals/results through partial and unavailable states.
+Regression tests cover market outage/recovery, failed registry scans with readable known markets, healthy empty scopes, disabled cache, failed child reads, overlapping refresh, migration preservation, deployment identity isolation and consistent public endpoints. App tests cover totals/results through partial and unavailable states.
 
 This is a polling mini-indexer. It does not pin every RPC to one block/slot/checkpoint or implement finalized event history. Turso recording-metadata migration, network isolation, historical activity/volume and agent reputation remain separate work. Recording playback is independently checked against storage and the committed pointer; an ended stream does not imply a replay exists.
 

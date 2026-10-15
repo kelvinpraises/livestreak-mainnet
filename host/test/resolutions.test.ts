@@ -10,7 +10,7 @@ it("retains immutable receipt bytes across restart, scopes discovery and detects
   const file = join(dir, "state.db");
   let db = createTestDatabase(file);
   try {
-    const r = await fixtureResolution();
+    const r = { ...await fixtureResolution(), chainId: "eip155:5042" };
     let store = createResolutionStore(db.db);
     const { digest } = await store.put(r);
     expect(await store.put(r)).toEqual({ digest });
@@ -19,7 +19,7 @@ it("retains immutable receipt bytes across restart, scopes discovery and detects
     store = createResolutionStore(db.db);
     expect(await store.get(digest)).toEqual(r);
     expect(await store.list(r.chainId, r.vaultId)).toEqual([digest]);
-    expect(await store.list("sui:localnet", r.vaultId)).toEqual([]);
+    await expect(store.list("eip155:1", r.vaultId)).rejects.toThrow("Invalid resolution scope");
     db.sqlite.prepare("UPDATE resolution_records SET body=? WHERE digest=?").run(
       Buffer.from(JSON.stringify({ ...r, reason: "tampered" })),
       digest,

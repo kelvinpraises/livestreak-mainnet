@@ -11,7 +11,7 @@ export interface CreateObserveConsoleEdgeInput {
   readonly runId: string;
   /** Opened via openObserveConsoleRuntime — the gateway shares it (e.g. steward's board facts). */
   readonly runtime: ObserveRuntime;
-  /** Host relay base URL (e.g. http://127.0.0.1:8787) — the encode-once live sink signals through it. */
+  /** Host relay base URL (e.g. http://127.0.0.1:8788) — the encode-once live sink signals through it. */
   readonly hostBaseUrl: string;
 }
 

@@ -119,7 +119,7 @@ const buildAllowedOrigins = (config: HostServerConfig): ReadonlySet<string> => {
   const port = config.bindPort;
   origins.add(`http://localhost:${port}`);
   origins.add(`http://127.0.0.1:${port}`);
-  origins.add("http://localhost:3000");
+  origins.add("http://localhost:3001");
   origins.add("http://localhost:5173");
 
   return origins;

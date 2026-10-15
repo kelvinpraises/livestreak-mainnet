@@ -45,10 +45,10 @@ const allModules: readonly HostModuleToken[] = [
 ];
 
 export const defaultHostServerConfig = (): HostServerConfig => ({
-  hostId: process.env.LIVESTREAK_HOST_ID ?? "host_dev",
-  baseUrl: process.env.LIVESTREAK_HOST_BASE_URL ?? "http://127.0.0.1:8787",
+  hostId: process.env.LIVESTREAK_HOST_ID ?? "livestreak-mainnet",
+  baseUrl: process.env.LIVESTREAK_HOST_BASE_URL ?? "http://127.0.0.1:8788",
   bindHost: process.env.LIVESTREAK_HOST_BIND_HOST ?? "127.0.0.1",
-  bindPort: Number.parseInt(process.env.LIVESTREAK_HOST_BIND_PORT ?? "8787", 10),
+  bindPort: Number.parseInt(process.env.LIVESTREAK_HOST_BIND_PORT ?? "8788", 10),
   startedAtMs: Date.now(),
   accountTier: "dev",
   termsVersion: "dev-terms",

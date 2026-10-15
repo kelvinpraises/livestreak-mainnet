@@ -16,10 +16,10 @@ import {
   type UnlockedKeystore
 } from "@livestreak/wallet/keystore";
 
-// Default at-rest location: ~/.livestreak/keystore.json. Override with LIVESTREAK_KEYSTORE_PATH
+// Default at-rest location: ~/.livestreak-mainnet/keystore.json. Override with LIVESTREAK_KEYSTORE_PATH
 // (used by tests to point at a temp dir).
 export const defaultKeystorePath = (): string =>
-  process.env["LIVESTREAK_KEYSTORE_PATH"] ?? join(homedir(), ".livestreak", "keystore.json");
+  process.env["LIVESTREAK_KEYSTORE_PATH"] ?? join(homedir(), ".livestreak-mainnet", "keystore.json");
 
 export const readKeystoreFile = async (path: string): Promise<KeystoreFile | undefined> => {
   let raw: string;

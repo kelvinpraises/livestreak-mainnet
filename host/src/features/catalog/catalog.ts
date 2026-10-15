@@ -10,7 +10,7 @@ export interface CatalogMarketRef {
 }
 
 // Lazily resolves a read-only options reader per chain. Returns null when a chain leg is
-// not configured (e.g. the EVM-only dev stack has no Sui reader) so the catalog degrades
+// not configured so the catalog degrades
 // gracefully instead of failing the whole request.
 export interface CatalogReaderProvider {
   reader(chain: CatalogChain): OptionsReader | null;

@@ -86,18 +86,18 @@ jobs:
             docker stop livestreak-mainnet-host 2>/dev/null || true
             docker rm livestreak-mainnet-host 2>/dev/null || true
             # Plain port mapping (no --network host): the live video path is now an
-            # encode-once fMP4 byte fan-out over WS on the single HTTP port (8787) — there
+            # encode-once fMP4 byte fan-out over WS on the single HTTP port (8788) — there
             # is no UDP media relay to allocate, so host networking is no longer needed and
             # a bridge with an explicit port map is the safer default. Runtime config comes
             # from the VPS-side env file, never from the image.
             docker run -d \
               --name livestreak-mainnet-host \
               --restart unless-stopped \
-              -p 8787:8787 \
+              -p 8788:8788 \
               --env-file /home/ubuntu/livestreak-mainnet-host.env \
               "$IMAGE"
             echo "--- waiting for health ---"
             sleep 5
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8787/health || echo 000)
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8788/health || echo 000)
             echo "GET /health -> $code"
             docker logs --tail 20 livestreak-mainnet-host || true

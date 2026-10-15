@@ -43,7 +43,7 @@ const newService = () =>
     gatewayToken: null,
     remoteBaseUrl: "http://127.0.0.1:8787",
     grantKeyHex: null,
-    grantKeyId: "host_dev_grant"
+    grantKeyId: "livestreak-mainnet_grant"
   });
 
 describe("remote admission — join → host-signed grant", () => {
@@ -232,7 +232,7 @@ describe("remote — grant key is independent of the paymaster signer", () => {
     const deps = createHostRouteDeps({ ...defaultHostServerConfig() });
     // Ed25519 raw public key is 32 bytes = 64 hex chars (NOT a secp256k1 EVM key).
     expect(deps.remote.signer.publicKeyHex).toMatch(/^[0-9a-f]{64}$/u);
-    expect(deps.remote.signer.keyId).toBe("host_dev_grant");
+    expect(deps.remote.signer.keyId).toBe("livestreak-mainnet_grant");
 
     // Two independently-created signers (no seed) produce DIFFERENT keys: the key
     // is generated for grants alone and is not shared with any other subsystem.

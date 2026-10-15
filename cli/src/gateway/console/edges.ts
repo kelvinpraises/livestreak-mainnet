@@ -189,7 +189,7 @@ const buildStewardVaultReader = (
     optionsChainConfigFromPackageInit(optionsInit, { readRpcUrl })
   ).reader;
   return {
-    chain: optionsInit.chain.startsWith("eip155") ? "evm" : "sui",
+    chain: "evm",
     readVaultFacts: async (subject) => {
       if (subject.vaultId === undefined) {
         return [];

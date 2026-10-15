@@ -1,6 +1,6 @@
 // File-backed JSON state for the gateway's in-memory runtime stores (bookmaker idempotency,
 // options paused lanes). Lives OUTSIDE the packages — they stay port-only; this is the CLI edge's
-// injected adapter. Mirrors keystore.ts: ~/.livestreak state dir, LIVESTREAK_STATE_DIR override for
+// injected adapter. Mirrors keystore.ts: ~/.livestreak-mainnet state dir, LIVESTREAK_STATE_DIR override for
 // tests, atomic tmp+rename writes.
 
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
@@ -8,7 +8,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 export const defaultStateDir = (): string =>
-  process.env["LIVESTREAK_STATE_DIR"] ?? join(homedir(), ".livestreak", "state");
+  process.env["LIVESTREAK_STATE_DIR"] ?? join(homedir(), ".livestreak-mainnet", "state");
 
 export const stateFilePath = (name: string): string => join(defaultStateDir(), name);
 

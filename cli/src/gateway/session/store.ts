@@ -1,6 +1,6 @@
 // Persistent, NON-SECRET session index so `remote list` / `remote revoke` work across CLI invocations
 // (the in-memory SessionRegistry is authoritative only inside a running daemon). Holds ONLY metadata —
-// never seed/grant signatures. Stored next to the keystore (~/.livestreak/sessions.json), 0600.
+// never seed/grant signatures. Stored next to the keystore (~/.livestreak-mainnet/sessions.json), 0600.
 
 import { mkdir, readFile, writeFile, rename, rm, open } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
@@ -26,7 +26,7 @@ export interface StoredSession {
 }
 
 export const defaultSessionStorePath = (): string =>
-  process.env["LIVESTREAK_SESSION_STORE"] ?? join(homedir(), ".livestreak", "sessions.json");
+  process.env["LIVESTREAK_SESSION_STORE"] ?? join(homedir(), ".livestreak-mainnet", "sessions.json");
 
 export const loadSessions = async (path: string): Promise<StoredSession[]> => {
   let raw: string;

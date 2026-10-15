@@ -14,7 +14,7 @@ export const runSettingsInit = async (input: {
   readonly outPath?: string;
 }): Promise<string> => {
   const outPath = input.outPath ?? defaultSettingsPath();
-  const hostUrl = input.hostUrl ?? "http://127.0.0.1:8787";
+  const hostUrl = input.hostUrl ?? "http://127.0.0.1:8788";
   let doc = buildDefaultSettings(hostUrl);
 
   // Refresh AA paths from host descriptor when reachable.
@@ -58,7 +58,7 @@ export const runSettingsShow = async (input?: { readonly path?: string }): Promi
 };
 
 const hostUrlOpt = Options.text("host-url").pipe(
-  Options.withDescription("Host base URL (default http://127.0.0.1:8787)"),
+  Options.withDescription("Host base URL (default http://127.0.0.1:8788)"),
   Options.optional
 );
 const outOpt = Options.text("out").pipe(

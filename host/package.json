@@ -21,7 +21,6 @@
     "@livestreak/options": "file:../packages/options",
     "@livestreak/schema": "file:../packages/schema",
     "@livestreak/wallet": "file:../packages/wallet",
-    "@mysten/sui": "^2.19.0",
     "express": "^5.2.1",
     "kysely": "^0.27.5",
     "node-cron": "^3.0.3",

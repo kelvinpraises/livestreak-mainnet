@@ -5,7 +5,7 @@ describe("explicit catalog chain configuration", () => {
     expect(parseCatalogChains(undefined)).toEqual(["evm"]);
   });
   it("supports a deduplicated operator-selected set", () => {
-    expect(parseCatalogChains("evm, solana,sui,evm")).toEqual(["evm", "solana", "sui"]);
+    expect(parseCatalogChains("evm,evm")).toEqual(["evm"]);
   });
   it.each(["", " , ", "ethereum", "evm,other"])(
     "rejects ambiguous configuration %s",
