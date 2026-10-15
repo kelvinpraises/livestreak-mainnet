@@ -6,7 +6,7 @@ export const OutputMode = Schema.Literal("file", "local", "simulcast");
 
 export type OutputMode = Schema.Schema.Type<typeof OutputMode>;
 
-/** CAIP-2 chain id, e.g. `eip155:31337`, `sui:localnet`. */
+/** CAIP-2 chain identity; production sessions use `eip155:5042`. */
 export type Caip2ChainId = string;
 
 /**
@@ -18,7 +18,7 @@ export interface SessionWallet {
   readonly chain: Caip2ChainId;
   /** Decrypted seed bytes — gateway memory only. */
   readonly seed: string | Uint8Array;
-  /** Chain-specific wallet init (AA config for EVM, rpc for Sui). */
+  /** ERC-4337 wallet configuration for Arc. */
   readonly walletInit: WalletInit;
   /** Operator address derived from seed (Safe on EVM). */
   readonly operatorAddress: string;

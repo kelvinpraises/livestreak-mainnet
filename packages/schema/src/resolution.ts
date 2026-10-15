@@ -87,7 +87,7 @@ export const canonicalResolutionBytes = (input: unknown): Uint8Array => {
     !["yes", "no", "pending"].includes(String(v.outcome))
   )
     throw new Error("Unsupported resolution record");
-  if (!/^(eip155|solana|sui):[^\s]+$/.test(text(v.chainId)))
+  if (!/^eip155:[0-9]+$/.test(text(v.chainId)))
     throw new Error("Invalid resolution chain");
   text(v.marketId);
   text(v.vaultId);

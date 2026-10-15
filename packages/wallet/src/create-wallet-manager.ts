@@ -1,7 +1,4 @@
 import { ConfigurationError, WalletManagerEvmErc4337 } from '#chains/evm.js'
-import { WalletManagerSolana } from '#chains/solana/index.js'
-import { WalletManagerSui } from '#chains/sui/index.js'
-
 import type { WalletChain, WalletConfigByChain, WalletManagerForChain } from '#types.js'
 
 export function createWalletManager<C extends WalletChain>(
@@ -9,29 +6,8 @@ export function createWalletManager<C extends WalletChain>(
   seed: string | Uint8Array,
   config: WalletConfigByChain[C],
 ): WalletManagerForChain<C> {
-  switch (chain) {
-    case 'evm': {
-      return new WalletManagerEvmErc4337(
-        seed,
-        config as WalletConfigByChain['evm'],
-      ) as WalletManagerForChain<C>
-    }
-    case 'sui': {
-      return new WalletManagerSui(
-        seed,
-        config as WalletConfigByChain['sui'],
-      ) as WalletManagerForChain<C>
-    }
-    case 'solana': {
-      return new WalletManagerSolana(
-        seed,
-        config as WalletConfigByChain['solana'],
-      ) as WalletManagerForChain<C>
-    }
-    default: {
-      throw new ConfigurationError(`Unsupported wallet chain: ${String(chain)}`)
-    }
-  }
+  if (chain !== 'evm') throw new ConfigurationError(`Unsupported wallet chain: ${String(chain)}`)
+  return new WalletManagerEvmErc4337(seed, config) as WalletManagerForChain<C>
 }
 
 export default createWalletManager

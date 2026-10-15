@@ -75,7 +75,7 @@ export const canonicalMandateBytes = (input: unknown): Uint8Array => {
   const v = object(input);
   keys(v, ["version", "chainId", "marketId", "question", "yesMeaning", "noMeaning", "method", "evaluation", "evidence", "authority", "authorityChanges", "fundingClose", "decisionStart", "decisionEnd", "missingEvidence", "ambiguityProcedure"]);
   if (v.version !== MANDATE_VERSION || v.authority !== "market-designated-steward" || v.authorityChanges !== "registry-authority-may-change") throw new Error("Unsupported mandate version or authority");
-  if (!/^(eip155|solana|sui):[^\s]+$/.test(text(v.chainId))) throw new Error("Invalid mandate chain identity");
+  if (!/^eip155:[0-9]+$/.test(text(v.chainId))) throw new Error("Invalid mandate chain identity");
   text(v.marketId);text(v.question);text(v.yesMeaning);text(v.noMeaning);text(v.ambiguityProcedure);
   if (v.yesMeaning === v.noMeaning) throw new Error("YES and NO must differ");
   if (!(time(v.fundingClose) <= time(v.decisionStart) && time(v.decisionStart) < time(v.decisionEnd))) throw new Error("Invalid mandate window ordering");

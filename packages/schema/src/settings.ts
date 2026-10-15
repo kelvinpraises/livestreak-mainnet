@@ -28,7 +28,7 @@ export const ChainSettings = Schema.Struct({
 });
 export type ChainSettings = Schema.Schema.Type<typeof ChainSettings>;
 
-/** CLI working-directory settings.json — host + multichain deployments. No run cache, no seed. */
+/** CLI working-directory settings.json — host + Arc deployment. No run cache, no seed. */
 export const SettingsDoc = Schema.Struct({
   host: Schema.Struct({
     url: Schema.String
@@ -38,5 +38,5 @@ export const SettingsDoc = Schema.Struct({
 });
 export type SettingsDoc = Schema.Schema.Type<typeof SettingsDoc>;
 
-export const DEFAULT_HOST_URL = "http://127.0.0.1:8787";
-export const DEFAULT_EVM_CAIP2 = "eip155:10143";
+export const DEFAULT_HOST_URL = "http://127.0.0.1:8788";
+export const DEFAULT_EVM_CAIP2 = "eip155:5042";

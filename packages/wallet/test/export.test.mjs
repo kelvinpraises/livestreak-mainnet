@@ -4,39 +4,13 @@ import assert from 'node:assert/strict'
 import createWalletManager, * as wallet from '@livestreak/wallet'
 
 const EXPECTED_EXPORTS = [
-  'createWalletManager',
-  'default',
-  'WalletManagerEvmErc4337',
-  'WalletAccountEvmErc4337',
-  'WalletAccountReadOnlyEvmErc4337',
-  'WalletManagerSui',
-  'WalletAccountSui',
-  'WalletAccountReadOnlySui',
-  'createSuiAccount',
-  'assertGasStationReturnedTxMatchesKind',
-  'ConfigurationError',
-  'executeSponsoredTransaction',
-  'assembleSponsoredTxBytes',
-  'createLocalGasStation',
-  'isSponsoredSuiConfig',
-  'WalletManagerSolana',
-  'WalletAccountSolana',
-  'WalletAccountReadOnlySolana',
-  'WalletAccountSolanaGasless',
-  'WalletAccountReadOnlySolanaGasless',
-  'assertKoraPreservedSignedTransaction',
-  'assertSolanaSponsorshipConfig',
-  'guardKoraClient',
-  'isSponsoredSolanaConfig',
-  'isTokenFreeSponsoredConfig',
-  'readSolanaSignatureReceipt',
-  'KoraClient',
-  'createSolanaRpc',
-  'solanaAddress',
+  'createWalletManager', 'default', 'WalletManagerEvmErc4337',
+  'WalletAccountEvmErc4337', 'WalletAccountReadOnlyEvmErc4337',
+  'ConfigurationError', 'pollUntilUserOperationIncluded', 'assertUserOperationSucceeded',
 ]
 
 describe('public export surface', () => {
-  it('exports the unified factory + per-chain classes + sponsored AA surface', () => {
+  it('exports the unified factory + EVM classes + sponsored AA surface', () => {
     for (const name of EXPECTED_EXPORTS) {
       assert.ok(name in wallet, `missing export: ${name}`)
     }
